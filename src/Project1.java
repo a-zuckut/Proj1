@@ -102,29 +102,29 @@ public class Project1 {
 
 			// NOTE: once processes are finished, burst_amt--, io_time_current
 			// starts to decrement
-			for (Process p : processes) {
+			for (Process p : processes) { // FOR EACH PROCESS  
 
-				if (p.state == State.TERMINATED) {
-					q.remove(p);
+				if (p.state == State.TERMINATED) {	 // CHECK TO SEE IF TERMINATED 
+					q.remove(p);					     // REMOVE FROM QUE
 					continue;
 				}
-				if (q.contains(p)) {
-					continue;
+				if (q.contains(p)) { // IF IN QUE
+					continue;		 // DO NOTHING
 				}
 
-				if (p.initial_arrival_time == t) {
-					p.state = State.READY;
+				if (p.initial_arrival_time == t) { // IF WE JUST ARRIVED 
+					p.state = State.READY;		   // PROGRAM IS READY, NOT BLOCKED
 					q.add(p); // JUST FOR ARRIVAL
 				}
 
-				if (p.io_time_current == 0 && p.state != State.RUNNING) {
+				if (p.io_time_current == 0 && p.state != State.RUNNING) { // IF THE PROGRAM IS READY TO RUN
 					p.io_time_current = p.io_time; // resetting io_time
-					if (p.number_bursts == 0) {
+					if (p.number_bursts == 0) {							// IF WE HAVE NO BURSTS LEFT
 						p.state = State.TERMINATED; // IF IO was the last thing
 													// to do... terminate
 					} else {
-						q.add(p);
-						p.state = State.READY;
+						q.add(p);					//WE HAVE BURSTS TO DO
+						p.state = State.READY;		//READY THE PROCESS LESGOO
 					}
 				}
 			}
