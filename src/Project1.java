@@ -32,6 +32,7 @@ public class Project1 {
 		Process[] xProcesses = parseProcesses(new File(filename));
 
 		Process[] temp = xProcesses.clone();
+		n = temp.length;
 		fcfs_simulation(temp);
 
 	}
@@ -170,9 +171,10 @@ public class Project1 {
 
 					// NOTE: THIS ONLY WOULD APPLY IF EVERY TIME A PROCESS
 					// ***ENDS*** THERE IS A CONTEXT SWITCH
-					
+
 					// t += t_cs;
-					// for(Process ps: processes) {
+					// for (Process ps : processes) {
+					// ps.context_switches++;
 					// assert(ps.state != State.RUNNING);
 					// if(ps.state == State.BLOCKED || ps.state == State.READY)
 					// {
