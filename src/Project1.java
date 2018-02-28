@@ -168,6 +168,20 @@ public class Project1 {
 					run.state = State.BLOCKED;
 					run.io_time_current = run.io_time;
 
+					// NOTE: THIS ONLY WOULD APPLY IF EVERY TIME A PROCESS
+					// ***ENDS*** THERE IS A CONTEXT SWITCH
+					
+					// t += t_cs;
+					// for(Process ps: processes) {
+					// assert(ps.state != State.RUNNING);
+					// if(ps.state == State.BLOCKED || ps.state == State.READY)
+					// {
+					// ps.wait_time += t_cs;
+					// ps.turnaround_time += t_cs;
+					// }
+					// }
+					// // ADD CONTEXT SWITCH TIME
+
 					q.remove(run);
 				}
 			}
