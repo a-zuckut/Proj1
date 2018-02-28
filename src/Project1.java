@@ -3,9 +3,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.function.DoubleBinaryOperator;
 
 public class Project1 {
 
@@ -33,7 +35,15 @@ public class Project1 {
 
 		Process[] temp = xProcesses.clone();
 		n = temp.length;
-		fcfs_simulation(temp);
+
+		String file_output = "";
+		file_output += fcfs_simulation(temp);
+
+		try {
+			printToFile(file_output, new File(args[1]));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 	}
 
@@ -84,7 +94,7 @@ public class Project1 {
 	 * 
 	 * @param processes
 	 */
-	public static void fcfs_simulation(Process[] processes) {
+	public static String fcfs_simulation(Process[] processes) {
 
 		int t = 0;
 		Queue<Process> q = new LinkedList<>();
@@ -129,7 +139,7 @@ public class Project1 {
 					ps.turnaround_time++;
 					if (ps.io_time_current > 0)
 						ps.io_time_current--;
-					ps.wait_time++;
+					// ps.wait_time++;
 				}
 				if (ps.state == State.READY) {
 					ps.turnaround_time++;
@@ -171,18 +181,17 @@ public class Project1 {
 
 					// NOTE: THIS ONLY WOULD APPLY IF EVERY TIME A PROCESS
 					// ***ENDS*** THERE IS A CONTEXT SWITCH
+					run.context_switches++;
 
-					// t += t_cs;
-					// for (Process ps : processes) {
-					// ps.context_switches++;
-					// assert(ps.state != State.RUNNING);
-					// if(ps.state == State.BLOCKED || ps.state == State.READY)
-					// {
-					// ps.wait_time += t_cs;
-					// ps.turnaround_time += t_cs;
-					// }
-					// }
-					// // ADD CONTEXT SWITCH TIME
+					t += t_cs;
+					for (Process ps : processes) {
+						assert (ps.state != State.RUNNING);
+						if (ps.state == State.BLOCKED || ps.state == State.READY) {
+							ps.wait_time += t_cs;
+							ps.turnaround_time += t_cs;
+						}
+					}
+					// ADD CONTEXT SWITCH TIME
 
 					q.remove(run);
 				}
@@ -190,13 +199,35 @@ public class Project1 {
 
 		}
 
+		int cpubursttime = 0;
+		int total_cpu_bursts = 0;
+		int waittime = 0;
+		int turnaroundtime = 0;
+		int contextswitches = 0;
+		int preemptions = 0;
+
 		for (Process p : processes) {
 			System.out.println("Process: " + p.process_id);
 			System.out.println("\tTurnaround: " + p.turnaround_time);
 			System.out.println("\tWait time: " + p.wait_time);
 			System.out.println("\tCPU Burst time: " + p.cpu_burst_time_actual);
-		}
 
+			total_cpu_bursts += p.number_bursts_CONSTANT;
+			cpubursttime += p.cpu_burst_time_actual;
+			waittime += p.wait_time;
+			turnaroundtime += p.turnaround_time;
+			contextswitches += p.context_switches;
+			preemptions += p.preemptions;
+
+		}
+		String ret = "Algorithm FCFS\n";
+		ret += String.format("-- average CPU burst time: %.2f ms\n", (double) cpubursttime / (double) total_cpu_bursts);
+		ret += String.format("-- average wait time: %.2f ms\n", (double) waittime / (double) total_cpu_bursts);
+		ret += String.format("-- average turnaround time: %.2f ms\n",
+				(double) turnaroundtime / (double) total_cpu_bursts);
+		ret += String.format("-- total number of context switches: %d\n", contextswitches);
+		ret += String.format("-- total number of preemptions: %d\n", preemptions);
+		return ret;
 	}
 
 	private static int running_index(Process[] processes) {
@@ -249,6 +280,7 @@ public class Project1 {
 		ret.initial_arrival_time = Integer.parseInt(split[1]);
 		ret.cpu_burst_time = Integer.parseInt(split[2]);
 		ret.number_bursts = Integer.parseInt(split[3]);
+		ret.number_bursts_CONSTANT = ret.number_bursts;
 		ret.io_time = Integer.parseInt(split[4]);
 		ret.burst_current = ret.cpu_burst_time;
 		ret.io_time_current = ret.io_time;
@@ -260,6 +292,9 @@ public class Project1 {
 		int initial_arrival_time;
 		int cpu_burst_time;
 		int number_bursts;
+
+		int number_bursts_CONSTANT;
+
 		int io_time;
 		State state = State.NOT_STARTED;
 
@@ -309,6 +344,14 @@ public class Project1 {
 		}
 
 		return ret;
+	}
+
+	public static void printToFile(String all, File file) throws Exception {
+		file.createNewFile();
+		PrintWriter printWriter = new PrintWriter(file);
+		printWriter.write(all);
+		printWriter.close();
+		System.out.println("File made");
 	}
 
 }
