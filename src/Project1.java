@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.DoubleBinaryOperator;
@@ -86,6 +87,19 @@ public class Project1 {
 	public static void srt_simulation(Process[] processes) {
 
 	}
+	
+	private static String queueToString(Queue<Process> queue) {
+		Process[] xProcesses = new Process[queue.size()];
+		xProcesses = queue.toArray(xProcesses);
+		
+		String ret = "[Q";
+		
+		for(Process ps:xProcesses) {
+			ret += " " + ps.process_id;
+		}
+		
+		return ret + "]";
+	}
 
 	/**
 	 * The FCFS algorithm is a non-preemptive algorithm in which processes line
@@ -98,8 +112,9 @@ public class Project1 {
 
 		int t = 0;
 		Queue<Process> q = new LinkedList<>();
+		System.out.printf("time %dms: Simulator started for FCFS [Q <empty>]\n", t);
 		while (running(processes)) {
-
+			boolean arrived = false;
 			// NOTE: once processes are finished, burst_amt--, io_time_current
 			// starts to decrement
 			for (Process p : processes) {
@@ -115,9 +130,9 @@ public class Project1 {
 				if (p.initial_arrival_time == t) {
 					p.state = State.READY;
 					q.add(p); // JUST FOR ARRIVAL
-				}
-
-				if (p.io_time_current == 0 && p.state != State.RUNNING) {
+					System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id, queueToString(q));
+					arrived = true;
+				} else if (p.io_time_current == 0 && p.state != State.RUNNING) {
 					p.io_time_current = p.io_time; // resetting io_time
 					if (p.number_bursts == 0) {
 						p.state = State.TERMINATED; // IF IO was the last thing
@@ -128,9 +143,13 @@ public class Project1 {
 					}
 				}
 			}
+			
+			if(arrived == true) {
+				t++;
+				continue;
+			}
 
 			// NOW FOR ACTUALLY RUNNING THE PROCESS
-			t++;
 			int running_index = running_index(processes);
 			// HERE NEED TO INCREMENT EVERYTHING THAT ISN'T RUNNING
 
@@ -152,6 +171,8 @@ public class Project1 {
 					continue;
 				}
 				Process run = q.remove();
+				
+				System.out.printf("time %dms: Process %s started using the CPU %s\n", t, run.process_id, queueToString(q));
 
 				run.state = State.RUNNING;
 				run.burst_current--;
@@ -161,7 +182,6 @@ public class Project1 {
 				if (run.burst_current == 0) {
 					run.state = State.BLOCKED;
 					run.io_time_current = run.io_time;
-
 				}
 
 			} else { // CHECK IF PROCESS IS NOW OVER - IF SO - START IO, burst--
@@ -172,7 +192,7 @@ public class Project1 {
 				run.cpu_burst_time_actual++;
 
 				if (run.burst_current == 0) {
-					System.out.println("Finished with " + run.process_id + " at time " + t);
+					System.out.printf("time %dms: Process %s terminated %s\n", t, run.process_id, queueToString(q));
 
 					run.number_bursts--;
 					run.burst_current = run.cpu_burst_time;
@@ -196,9 +216,12 @@ public class Project1 {
 					q.remove(run);
 				}
 			}
+			t++;
 
 		}
 
+		System.out.printf("time %dms: Simulator ended for FCFS\n\n", t);
+		
 		int cpubursttime = 0;
 		int total_cpu_bursts = 0;
 		int waittime = 0;
@@ -207,11 +230,6 @@ public class Project1 {
 		int preemptions = 0;
 
 		for (Process p : processes) {
-			System.out.println("Process: " + p.process_id);
-			System.out.println("\tTurnaround: " + p.turnaround_time);
-			System.out.println("\tWait time: " + p.wait_time);
-			System.out.println("\tCPU Burst time: " + p.cpu_burst_time_actual);
-
 			total_cpu_bursts += p.number_bursts_CONSTANT;
 			cpubursttime += p.cpu_burst_time_actual;
 			waittime += p.wait_time;
