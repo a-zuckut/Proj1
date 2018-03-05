@@ -43,6 +43,7 @@ public class Project1 {
 		try {
 			printToFile(file_output, new File(args[1]));
 		} catch (Exception e) {
+			// error in file
 			e.printStackTrace();
 		}
 
@@ -302,11 +303,6 @@ public class Project1 {
 					if (p.number_bursts == 0) {
 						p.state = State.TERMINATED; // IF IO was the last thing
 													// to do... terminate
-						if (!running(processes)) {
-							t += 3;
-							exit = true;
-							break;
-						}
 					} else {
 						q.add(p);
 						added = new ArrayList<>();
@@ -327,13 +323,8 @@ public class Project1 {
 
 			for (Process ps : processes) {
 				if (ps.state == State.BLOCKED) {
-					ps.turnaround_time++;
 					if (ps.io_time_current > -1)
 						ps.io_time_current--;
-				}
-				if (ps.state == State.READY) {
-					ps.turnaround_time++;
-					ps.wait_time++;
 				}
 			}
 
@@ -348,6 +339,11 @@ public class Project1 {
 			int running_index = running_index(processes);
 
 			if (waiting) {
+				for(Process ps: processes) {
+					if(State.READY == ps.state) {
+						ps.turnaround_time++;
+					}
+				}
 				waiting_next = false;
 				t++;
 				waiting_for--;
@@ -355,6 +351,12 @@ public class Project1 {
 					waiting = false;
 			} else if (running_index == -1 && !waiting_next) { // START A NEW
 																// PROCESS
+				for(Process ps: processes) {
+					if(State.READY == ps.state) {
+						ps.turnaround_time++;
+						ps.wait_time++;
+					}
+				}
 				if (q.isEmpty()) {
 					t++;
 					if(hasout) {
@@ -381,7 +383,20 @@ public class Project1 {
 					run.io_time_current = run.io_time;
 				}
 				t++;
+				for(Process ps:processes) {
+					if(State.READY == ps.state) {
+						ps.turnaround_time++;
+						ps.wait_time++;
+					}
+				}
+				
 			} else { // CHECK IF PROCESS IS NOW OVER - IF SO - START IO, burst--
+				for(Process ps: processes) {
+					if(State.READY == ps.state) {
+						ps.turnaround_time++;
+						ps.wait_time++;
+					}
+				}
 				if (waiting_next && running_index == -1){
 					if(hasout) {
 						for(Process p: added) {
@@ -435,6 +450,7 @@ public class Project1 {
 						run.io_time_current = 0;
 					}
 					run.burst_current = run.cpu_burst_time;
+					run.cpu_burst_time_actual--;
 					if (run.state != State.TERMINATED)
 						run.state = State.BLOCKED;
 
@@ -619,7 +635,6 @@ public class Project1 {
 		PrintWriter printWriter = new PrintWriter(file);
 		printWriter.write(all);
 		printWriter.close();
-		System.out.println("File made");
 	}
 
 }
