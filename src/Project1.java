@@ -38,7 +38,7 @@ public class Project1 {
 		n = temp.length;
 
 		String file_output = "";
-		file_output += fcfs_simulation(temp);
+		file_output += srt_simulation(temp);
 
 		try {
 			printToFile(file_output, new File(args[1]));
@@ -86,13 +86,14 @@ public class Project1 {
 		 */
 	
 	public static int getShortestProcessIndex(Process[] processes) {
-		int max = 0;
+		int max = 999999;
 		int index = 0;
 		int i = 0;
 		for (Process ps : processes) {
-			if (ps.burst_current > max) {
+			if (ps.state == State.READY && ps.burst_current < max) {
 				max = ps.burst_current;
 				index = i;
+//				System.out.printf("Max is %d \n", max );
 			}
 			i++;
 		}
@@ -149,9 +150,17 @@ public class Project1 {
 				if (p.initial_arrival_time == t) {
 					p.state = State.READY;
 					q.add(p); // JUST FOR ARRIVAL
-					System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id,
-							queueToString(q),  getShortestProcessIndex(processes));
+					int x = getShortestProcessIndex(processes);
+
 					arrived = true;
+					if(x > 0) {
+						System.out.printf("time %dms: Process %s arrived and will preempt %s %s\n", t , p.process_id, processes[0].process_id, queueToString(q));
+					}
+					else {
+						System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id,
+								queueToString(q));
+					}
+					
 //					System.out.printf("time %dms: Process %s arrived and added to ready queue %s Shorted index at :%d\n", t, p.process_id, getShortestProcessIndex(processes);
 					
 				} else if (t == p.io_time_next) { // FOR IO FINISH
