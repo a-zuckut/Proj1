@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.function.DoubleBinaryOperator;
 
@@ -90,7 +92,7 @@ public class Project1 {
 		int index = 0;
 		int i = 0;
 		for (Process ps : processes) {
-			if (ps.state == State.READY && ps.burst_current < max) {
+			if ((ps.state == State.READY || ps.state == State.RUNNING) && ps.burst_current < max) {
 				max = ps.burst_current;
 				index = i;
 //				System.out.printf("Max is %d \n", max );
@@ -102,7 +104,7 @@ public class Project1 {
 	
 	public static void printProcess(Process[] processes) {
 		for (Process ps : processes) {
-				System.out.printf("ProcessState is %s \n", ps.state );
+				System.out.printf("Process: %s ProcessState is %s : ProcessTimeRemaining is %d \n",ps.process_id, ps.state, ps.burst_current  );
 		}
 	}
 	
@@ -112,11 +114,11 @@ public class Project1 {
 
 
 		int t = 0;
-		Queue<Process> q = new LinkedList<>();
+		PriorityQueue<Process> q = new PriorityQueue<>();
 		System.out.printf("time %dms: Simulator started for SRT [Q <empty>]\n", t);
 		boolean waiting = false, exit = false, waiting_next = false;
 		int waiting_for = 0;
-		ArrayList<Process> added = new ArrayList<>();
+		PriorityQueue<Process> added = new PriorityQueue<>();
 		int time = -1;
 		boolean hasout = false;
 		boolean prem = false;
@@ -145,7 +147,6 @@ public class Project1 {
 				exit = true;
 				break;
 			}
-
 			for (Process p : processes) {
 				if (p.state == State.TERMINATED) {
 					q.remove(p);
@@ -154,18 +155,27 @@ public class Project1 {
 				if (q.contains(p)) {
 					continue;
 				}
-
 				if (p.initial_arrival_time == t) {
 					p.state = State.READY;
 					q.add(p); // JUST FOR ARRIVAL
 					int x = getShortestProcessIndex(processes);
 					int y = getRunningProcessIndex(processes);
 					arrived = true;
+//					System.out.printf("time %dms: X %d Y %d\n", t , x, y );
 					if(y > 0 && x != y) {
 //						printProcess(processes);
+						q.remove(p);
 						String ss = getRunningProcess(processes);
 						System.out.printf("time %dms: Process %s arrived and will preempt %s %s\n", t , p.process_id, ss , queueToString(q));
+//						processes = contextSwitch(processes);
+						t += 8;
 						prem = true;
+						processes[y].state = State.READY;
+						p.state = State.RUNNING;
+						q.add(processes[y]);
+						System.out.printf("time %dms: Process %s started using the CPU %s\n", t, p.process_id,
+								queueToString(q));
+//						prempt
 					}
 					else {
 						System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id,
@@ -181,7 +191,7 @@ public class Project1 {
 													// to do... terminate
 					} else {
 						q.add(p);
-						added = new ArrayList<>();
+						added = new PriorityQueue<>();
 						added.add(p);
 						time = t;
 						hasout = true;
@@ -193,7 +203,8 @@ public class Project1 {
 					}
 				}
 			}
-
+			
+			
 			if (exit)
 				continue;
 			
@@ -212,9 +223,11 @@ public class Project1 {
 				continue;
 			}
 
+			
 			int running_index = running_index(processes);
 
 			if (waiting) {
+				
 				for(Process ps: processes) {
 					if(State.READY == ps.state) {
 						ps.turnaround_time++;
@@ -225,6 +238,8 @@ public class Project1 {
 				waiting_for--;
 				if (waiting_for == 0)
 					waiting = false;
+				
+				
 			} else if (running_index == -1 && !waiting_next) { // START A NEW
 																// PROCESS
 				for(Process ps: processes) {
@@ -237,7 +252,7 @@ public class Project1 {
 					t++;
 					if(hasout) {
 						for(Process p: added) {
-							System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", time,
+							System.out.printf("time %dms:321 321 Process %s completed I/O; added to ready queue %s\n", time,
 									p.process_id, queueToString(q));
 						}
 						hasout = false;
@@ -245,8 +260,8 @@ public class Project1 {
 					continue;
 				}
 				Process run = q.remove();
-
-				System.out.printf("time %dms: Process %s started using the CPU %s\n", t, run.process_id,
+				
+				System.out.printf("time %dms: Process %s started using the CPU with %dms remaining %s\n", t, run.process_id, run.burst_current,
 						queueToString(q));
 
 				run.state = State.RUNNING;
@@ -265,6 +280,7 @@ public class Project1 {
 						ps.wait_time++;
 					}
 				}
+				
 				
 			} else { // CHECK IF PROCESS IS NOW OVER - IF SO - START IO, burst--
 				for(Process ps: processes) {
@@ -288,6 +304,7 @@ public class Project1 {
 				run.turnaround_time++;
 				run.burst_current--;
 				run.cpu_burst_time_actual++;
+				
 
 				if (run.burst_current == -1) {
 
@@ -343,9 +360,25 @@ public class Project1 {
 				}
 				
 				if(hasout) {
+					int max = run.burst_current;
 					for(Process p: added) {
+						if(p.burst_current < max) {
+							q.remove(p);
+							System.out.printf("time %dms: Process %s completed I/O and will preempt %s %s\n", time,
+									p.process_id, run.process_id, queueToString(q));
+							run.state = State.READY;
+							t += 8;
+							prem = true;
+							p.state = State.RUNNING;
+							q.add(run);
+							System.out.printf("time %dms: Process %s started using the CPU %s\n", t, p.process_id,
+									queueToString(q));
+
+						}
+						else {
 						System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", time,
 								p.process_id, queueToString(q));
+						}
 					}
 					hasout = false;
 				}
@@ -355,6 +388,7 @@ public class Project1 {
 				if (!running(processes))
 					t += t_cs / 2 - 1;
 			}
+
 		}
 
 		System.out.printf("time %dms: Simulator ended for FCFS\n\n", t);
@@ -384,6 +418,7 @@ public class Project1 {
 		ret += String.format("-- total number of preemptions: %d\n", preemptions);
 		return ret;
 	}
+
 
 	public static String getRunningProcess(Process[] processes) {
 		for (Process ps : processes) {
@@ -750,7 +785,7 @@ public class Project1 {
 		return ret;
 	}
 
-	public static class Process {
+	public static class Process implements Comparable<Process>{
 		String process_id;
 		int initial_arrival_time;
 		int cpu_burst_time;
@@ -780,6 +815,14 @@ public class Project1 {
 			return String.format("|%s|||io_time_current: %d|burst_current: %d|state: %s|", process_id, io_time_current,
 					burst_current, state);
 		}
+
+		@Override
+		public int compareTo(Process o) {
+				// TODO Auto-generated method stub
+			return Integer.compare( this.burst_current,o.burst_current);
+		}
+
+		
 	}
 
 	public enum State {
