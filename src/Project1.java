@@ -71,51 +71,56 @@ public class Project1 {
 
 	}
 
-public static String srt_simulation(Process[] processes) {
-		
+	public static String srt_simulation(Process[] processes) {
+
 		int t = 0;
 		Queue<Process> q = new LinkedList<>();
 		while (running(processes)) {
 
 			// NOTE: once processes are finished, burst_amt--, io_time_current
 			// starts to decrement
-			for (Process p : processes) { // FOR EACH PROCESS  
+			for (Process p : processes) { // FOR EACH PROCESS
 
-				if (p.state == State.TERMINATED) {	 // CHECK TO SEE IF TERMINATED 
-					q.remove(p);					     // REMOVE FROM QUE
+				if (p.state == State.TERMINATED) { // CHECK TO SEE IF TERMINATED
+					q.remove(p); // REMOVE FROM QUE
 					continue;
 				}
 				if (q.contains(p)) { // IF IN QUE
-					continue;		 // DO NOTHING
+					continue; // DO NOTHING
 				}
-				//Not in Q
-				if (p.initial_arrival_time == t) { // IF WE JUST ARRIVED 
-					p.state = State.READY;		   // PROGRAM IS READY, NOT BLOCKED
-					//NEED TO ADD IN ORDER OF REMAINING TIME
-					
+				// Not in Q
+				if (p.initial_arrival_time == t) { // IF WE JUST ARRIVED
+					p.state = State.READY; // PROGRAM IS READY, NOT BLOCKED
+					// NEED TO ADD IN ORDER OF REMAINING TIME
+
 					q.add(p); // JUST FOR ARRIVAL
-					
-					//NEED TO CHECK HERE TO SEE IF WE NEED TO PREEMPT
+
+					// NEED TO CHECK HERE TO SEE IF WE NEED TO PREEMPT
 				}
 
-				if (p.io_time_current == 0 && p.state != State.RUNNING) { // IF THE PROGRAM IS READY TO RUN
+				if (p.io_time_current == 0 && p.state != State.RUNNING) { // IF
+																			// THE
+																			// PROGRAM
+																			// IS
+																			// READY
+																			// TO
+																			// RUN
 					p.io_time_current = p.io_time; // resetting io_time
-					if (p.number_bursts == 0) {							// IF WE HAVE NO BURSTS LEFT
+					if (p.number_bursts == 0) { // IF WE HAVE NO BURSTS LEFT
 						p.state = State.TERMINATED; // IF IO was the last thing
 													// to do... terminate
 					} else {
-						q.add(p);					//WE HAVE BURSTS TO DO
-						p.state = State.READY;		//READY THE PROCESS LESGOO
+						q.add(p); // WE HAVE BURSTS TO DO
+						p.state = State.READY; // READY THE PROCESS LESGOO
 					}
 				}
 			}
-			//END FOR EACH PROCESS
+			// END FOR EACH PROCESS
 
-			
 			// NOW FOR ACTUALLY RUNNING THE PROCESS
 			t++;
 			int running_index = running_index(processes);
-			
+
 			// HERE NEED TO INCREMENT EVERYTHING THAT ISN'T RUNNING
 
 			for (Process ps : processes) {
@@ -130,17 +135,18 @@ public static String srt_simulation(Process[] processes) {
 					ps.wait_time++;
 				}
 			}
-				
-			//DONE WITH INCREMENTATION
-			
-			if (running_index == -1) { // START A NEW PROCESS IF THERE IS NONE RUNNING
-				if (q.isEmpty()) {
-					continue;		  // CHECK TO SEE IF Q HAS ANYTHING FOR US
-				}
-				Process run = q.remove();	// START THAT BADBOY UP
 
-				run.state = State.RUNNING; 	// Now its running
-				run.burst_current--;			//
+			// DONE WITH INCREMENTATION
+
+			if (running_index == -1) { // START A NEW PROCESS IF THERE IS NONE
+										// RUNNING
+				if (q.isEmpty()) {
+					continue; // CHECK TO SEE IF Q HAS ANYTHING FOR US
+				}
+				Process run = q.remove(); // START THAT BADBOY UP
+
+				run.state = State.RUNNING; // Now its running
+				run.burst_current--; //
 				run.cpu_burst_time_actual++;
 				run.turnaround_time++;
 
@@ -158,8 +164,9 @@ public static String srt_simulation(Process[] processes) {
 				run.cpu_burst_time_actual++;
 
 				if (run.burst_current == 0) {
-					//Todo need to fiure out remaining burst time
-					System.out.println("Finished with " + run.process_id + " With remaining time "+ run.number_bursts*run.cpu_burst_time + " at time " + t);
+					// Todo need to fiure out remaining burst time
+					System.out.println("Finished with " + run.process_id + " With remaining time "
+							+ run.number_bursts * run.cpu_burst_time + " at time " + t);
 					run.number_bursts--;
 					run.burst_current = run.cpu_burst_time;
 					run.state = State.BLOCKED;
@@ -215,17 +222,20 @@ public static String srt_simulation(Process[] processes) {
 		ret += String.format("-- total number of preemptions: %d\n", preemptions);
 		return ret;
 	}
-	
+
 	private static String queueToString(Queue<Process> queue) {
 		Process[] xProcesses = new Process[queue.size()];
 		xProcesses = queue.toArray(xProcesses);
-		
+
+		if (queue.isEmpty())
+			return "[Q <empty>]";
+
 		String ret = "[Q";
-		
-		for(Process ps:xProcesses) {
+
+		for (Process ps : xProcesses) {
 			ret += " " + ps.process_id;
 		}
-		
+
 		return ret + "]";
 	}
 
@@ -241,12 +251,38 @@ public static String srt_simulation(Process[] processes) {
 		int t = 0;
 		Queue<Process> q = new LinkedList<>();
 		System.out.printf("time %dms: Simulator started for FCFS [Q <empty>]\n", t);
-		while (running(processes)) {
+		boolean waiting = false, exit = false, waiting_next = false;
+		int waiting_for = 0;
+		ArrayList<Process> added = new ArrayList<>();
+		int time = -1;
+		boolean hasout = false;
+
+		while (running(processes) && !exit) {
+
+			waiting = waiting_next || waiting;
 			boolean arrived = false;
 			// NOTE: once processes are finished, burst_amt--, io_time_current
 			// starts to decrement
-			for (Process p : processes) {
 
+			for (Process p : processes) {
+				if (p.state != State.TERMINATED) {
+					exit = false;
+				}
+				if (p.number_bursts > 0) {
+					exit = false;
+				}
+				if (p.burst_current > 0 || p.burst_current == p.cpu_burst_time) {
+					exit = false;
+				}
+			}
+
+			if (exit) {
+				t += t_cs / 2;
+				exit = true;
+				break;
+			}
+
+			for (Process p : processes) {
 				if (p.state == State.TERMINATED) {
 					q.remove(p);
 					continue;
@@ -258,35 +294,42 @@ public static String srt_simulation(Process[] processes) {
 				if (p.initial_arrival_time == t) {
 					p.state = State.READY;
 					q.add(p); // JUST FOR ARRIVAL
-					System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id, queueToString(q));
+					System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id,
+							queueToString(q));
 					arrived = true;
-				} else if (p.io_time_current == 0 && p.state != State.RUNNING) {
+				} else if (t == p.io_time_next) { // FOR IO FINISH
 					p.io_time_current = p.io_time; // resetting io_time
 					if (p.number_bursts == 0) {
 						p.state = State.TERMINATED; // IF IO was the last thing
 													// to do... terminate
+						if (!running(processes)) {
+							t += 3;
+							exit = true;
+							break;
+						}
 					} else {
 						q.add(p);
+						added = new ArrayList<>();
+						added.add(p);
+						time = t;
+						hasout = true;
 						p.state = State.READY;
+						if (q.size() == 1 && running_index(processes) == -1) {
+							waiting_next = true;
+							waiting_for += 4;
+						}
 					}
 				}
 			}
-			
-			if(arrived == true) {
-				t++;
-				continue;
-			}
 
-			// NOW FOR ACTUALLY RUNNING THE PROCESS
-			int running_index = running_index(processes);
-			// HERE NEED TO INCREMENT EVERYTHING THAT ISN'T RUNNING
+			if (exit)
+				continue;
 
 			for (Process ps : processes) {
 				if (ps.state == State.BLOCKED) {
 					ps.turnaround_time++;
-					if (ps.io_time_current > 0)
+					if (ps.io_time_current > -1)
 						ps.io_time_current--;
-					// ps.wait_time++;
 				}
 				if (ps.state == State.READY) {
 					ps.turnaround_time++;
@@ -294,13 +337,39 @@ public static String srt_simulation(Process[] processes) {
 				}
 			}
 
-			if (running_index == -1) { // START A NEW PROCESS
+			if (arrived == true) {
+				if (running_index(processes) == -1) {
+					waiting_next = true;
+					waiting_for += 4;
+				}
+				continue;
+			}
+
+			int running_index = running_index(processes);
+
+			if (waiting) {
+				waiting_next = false;
+				t++;
+				waiting_for--;
+				if (waiting_for == 0)
+					waiting = false;
+			} else if (running_index == -1 && !waiting_next) { // START A NEW
+																// PROCESS
 				if (q.isEmpty()) {
+					t++;
+					if(hasout) {
+						for(Process p: added) {
+							System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", time,
+									p.process_id, queueToString(q));
+						}
+						hasout = false;
+					}
 					continue;
 				}
 				Process run = q.remove();
-				
-				System.out.printf("time %dms: Process %s started using the CPU %s\n", t, run.process_id, queueToString(q));
+
+				System.out.printf("time %dms: Process %s started using the CPU %s\n", t, run.process_id,
+						queueToString(q));
 
 				run.state = State.RUNNING;
 				run.burst_current--;
@@ -311,45 +380,93 @@ public static String srt_simulation(Process[] processes) {
 					run.state = State.BLOCKED;
 					run.io_time_current = run.io_time;
 				}
-
+				t++;
 			} else { // CHECK IF PROCESS IS NOW OVER - IF SO - START IO, burst--
+				if (waiting_next && running_index == -1){
+					if(hasout) {
+						for(Process p: added) {
+							System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", time,
+									p.process_id, queueToString(q));
+						}
+						hasout = false;
+					}
+					continue;
+				}
 				Process run = processes[running_index];
 
 				run.turnaround_time++;
 				run.burst_current--;
 				run.cpu_burst_time_actual++;
 
-				if (run.burst_current == 0) {
-					System.out.printf("time %dms: Process %s terminated %s\n", t, run.process_id, queueToString(q));
+				if (run.burst_current == -1) {
 
 					run.number_bursts--;
+					if (run.number_bursts != 0) {
+
+						if(q.containsAll(added) && !added.isEmpty() && time == t) {
+							Queue<Process> copy = new LinkedList<>();
+							copy.addAll(q);
+							copy.removeAll(added);
+							run.io_time_next = t + run.io_time + t_cs / 2;
+							System.out.printf("time %dms: Process %s completed a CPU burst; %d burst%s to go %s\n", t,
+									run.process_id, run.number_bursts, run.number_bursts > 1 ? "s" : "",
+									queueToString(copy));
+							System.out.printf(
+									"time %dms: Process %s switching out of CPU; will block on I/O until time %dms %s\n",
+									t, run.process_id, run.io_time_next, queueToString(copy));
+							for(Process p: added) {
+								System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", t,
+										p.process_id, queueToString(q));
+							}
+							hasout = false;
+						} else {
+
+							run.io_time_next = t + run.io_time + t_cs / 2;
+							System.out.printf("time %dms: Process %s completed a CPU burst; %d burst%s to go %s\n", t,
+									run.process_id, run.number_bursts, run.number_bursts > 1 ? "s" : "",
+									queueToString(q));
+							System.out.printf(
+									"time %dms: Process %s switching out of CPU; will block on I/O until time %dms %s\n",
+									t, run.process_id, run.io_time_next, queueToString(q));
+						}
+					} else {
+						System.out.printf("time %dms: Process %s terminated %s\n", t, run.process_id, queueToString(q));
+						run.state = State.TERMINATED;
+						run.io_time_current = 0;
+					}
 					run.burst_current = run.cpu_burst_time;
-					run.state = State.BLOCKED;
-					run.io_time_current = run.io_time;
+					if (run.state != State.TERMINATED)
+						run.state = State.BLOCKED;
 
 					// NOTE: THIS ONLY WOULD APPLY IF EVERY TIME A PROCESS
 					// ***ENDS*** THERE IS A CONTEXT SWITCH
 					run.context_switches++;
 
-					t += t_cs;
-					for (Process ps : processes) {
-						assert (ps.state != State.RUNNING);
-						if (ps.state == State.BLOCKED || ps.state == State.READY) {
-							ps.wait_time += t_cs;
-							ps.turnaround_time += t_cs;
-						}
-					}
+					waiting = true;
+					waiting_for = t_cs - 1;
+
 					// ADD CONTEXT SWITCH TIME
 
 					q.remove(run);
 				}
+				
+				if(hasout) {
+					for(Process p: added) {
+						System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", time,
+								p.process_id, queueToString(q));
+					}
+					hasout = false;
+				}
+				
+				
+				t++;
+				if (!running(processes))
+					t += t_cs / 2 - 1;
 			}
-			t++;
-
 		}
 
 		System.out.printf("time %dms: Simulator ended for FCFS\n\n", t);
-		
+
 		int cpubursttime = 0;
 		int total_cpu_bursts = 0;
 		int waittime = 0;
@@ -430,6 +547,7 @@ public static String srt_simulation(Process[] processes) {
 		ret.io_time = Integer.parseInt(split[4]);
 		ret.burst_current = ret.cpu_burst_time;
 		ret.io_time_current = ret.io_time;
+		ret.io_time_next = -1;
 		return ret;
 	}
 
@@ -445,6 +563,7 @@ public static String srt_simulation(Process[] processes) {
 		State state = State.NOT_STARTED;
 
 		int io_time_current;
+		int io_time_next;
 		int burst_current;
 
 		int turnaround_time = 0;
@@ -456,8 +575,11 @@ public static String srt_simulation(Process[] processes) {
 
 		@Override
 		public String toString() {
-			return "Process: " + process_id + "; Arrived " + initial_arrival_time + " ms; " + number_bursts + ", "
-					+ cpu_burst_time + " ms bursts; " + io_time + " IO_TIME";
+			// return "Process: " + process_id + "; Arrived " +
+			// initial_arrival_time + " ms; " + number_bursts + ", "
+			// + cpu_burst_time + " ms bursts; " + io_time + " IO_TIME";
+			return String.format("|%s|||io_time_current: %d|burst_current: %d|state: %s|", process_id, io_time_current,
+					burst_current, state);
 		}
 	}
 
