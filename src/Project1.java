@@ -364,7 +364,7 @@ public class Project1 {
 					for(Process p: added) {
 						if(p.burst_current < max) {
 							q.remove(p);
-							System.out.printf("time %dms: Process %s completed I/O and will preempt %s %s\n", time,
+							System.out.printf("1111ime %dms: Process %s completed I/O and will preempt %s %s\n", time,
 									p.process_id, run.process_id, queueToString(q));
 							run.state = State.READY;
 							t += 8;
@@ -382,7 +382,6 @@ public class Project1 {
 					}
 					hasout = false;
 				}
-				
 				
 				t++;
 				if (!running(processes))
