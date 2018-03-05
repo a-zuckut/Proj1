@@ -99,6 +99,13 @@ public class Project1 {
 		}
 		return index;
 	}
+	
+	public static void printProcess(Process[] processes) {
+		for (Process ps : processes) {
+				System.out.printf("ProcessState is %s \n", ps.state );
+		}
+	}
+	
 
 	
 	public static String srt_simulation(Process[] processes) {
@@ -112,6 +119,7 @@ public class Project1 {
 		ArrayList<Process> added = new ArrayList<>();
 		int time = -1;
 		boolean hasout = false;
+		boolean prem = false;
 
 		while (running(processes) && !exit) {
 
@@ -151,10 +159,13 @@ public class Project1 {
 					p.state = State.READY;
 					q.add(p); // JUST FOR ARRIVAL
 					int x = getShortestProcessIndex(processes);
-
+					int y = getRunningProcessIndex(processes);
 					arrived = true;
-					if(x > 0) {
-						System.out.printf("time %dms: Process %s arrived and will preempt %s %s\n", t , p.process_id, processes[0].process_id, queueToString(q));
+					if(y > 0 && x != y) {
+//						printProcess(processes);
+						String ss = getRunningProcess(processes);
+						System.out.printf("time %dms: Process %s arrived and will preempt %s %s\n", t , p.process_id, ss , queueToString(q));
+						prem = true;
 					}
 					else {
 						System.out.printf("time %dms: Process %s arrived and added to ready queue %s\n", t, p.process_id,
@@ -185,7 +196,7 @@ public class Project1 {
 
 			if (exit)
 				continue;
-
+			
 			for (Process ps : processes) {
 				if (ps.state == State.BLOCKED) {
 					if (ps.io_time_current > -1)
@@ -372,6 +383,28 @@ public class Project1 {
 		ret += String.format("-- total number of context switches: %d\n", contextswitches);
 		ret += String.format("-- total number of preemptions: %d\n", preemptions);
 		return ret;
+	}
+
+	public static String getRunningProcess(Process[] processes) {
+		for (Process ps : processes) {
+//				System.out.printf("ProcessState is %s \n", ps.state );
+				if(ps.state == State.RUNNING) {
+					return ps.process_id;
+				}
+		}
+		return "n";
+	}
+
+	public static int getRunningProcessIndex(Process[] processes) {
+		int i = 0;
+		for (Process ps : processes) {
+//				System.out.printf("ProcessState is %s \n", ps.state );
+				if(ps.state == State.RUNNING) {
+					return i;
+				}
+				i++;
+		}
+		return -1;
 	}
 
 	private static String queueToString(Queue<Process> queue) {
