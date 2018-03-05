@@ -124,7 +124,6 @@ public class Project1 {
 		boolean prem = false;
 
 		while (running(processes) && !exit) {
-
 			waiting = waiting_next || waiting;
 			boolean arrived = false;
 			// NOTE: once processes are finished, burst_amt--, io_time_current
@@ -249,10 +248,11 @@ public class Project1 {
 					}
 				}
 				if (q.isEmpty()) {
+					
 					t++;
 					if(hasout) {
 						for(Process p: added) {
-							System.out.printf("time %dms:321 321 Process %s completed I/O; added to ready queue %s\n", time,
+							System.out.printf("time %dms:Process %s completed I/O; added to ready queue %s\n", time,
 									p.process_id, queueToString(q));
 						}
 						hasout = false;
@@ -263,6 +263,7 @@ public class Project1 {
 				
 				System.out.printf("time %dms: Process %s started using the CPU with %dms remaining %s\n", t, run.process_id, run.burst_current,
 						queueToString(q));
+				
 
 				run.state = State.RUNNING;
 				run.burst_current--;
@@ -364,7 +365,7 @@ public class Project1 {
 					for(Process p: added) {
 						if(p.burst_current < max) {
 							q.remove(p);
-							System.out.printf("time %dms: Process %s completed I/O and will preempt %s %s\n", time,
+							System.out.printf("time %dms: 22 Process %s completed I/O and will preempt %s %s\n", time,
 									p.process_id, run.process_id, queueToString(q));
 							run.state = State.READY;
 							t += 8;
@@ -373,6 +374,7 @@ public class Project1 {
 							q.add(run);
 							System.out.printf("time %dms: Process %s started using the CPU %s\n", t, p.process_id,
 									queueToString(q));
+							t--;
 
 						}
 						else {
@@ -382,8 +384,10 @@ public class Project1 {
 					}
 					hasout = false;
 				}
-				
 				t++;
+//				if(t<1000 && t>400) {
+//					System.out.printf("time %dms: Here %s \n", t , queueToString(q));
+//					}
 				if (!running(processes))
 					t += t_cs / 2 - 1;
 			}
