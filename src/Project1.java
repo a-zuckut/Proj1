@@ -37,10 +37,14 @@ public class Project1 {
 		Process[] xProcesses = parseProcesses(new File(filename));
 
 		Process[] temp = xProcesses.clone();
+		Process[] temp2 = parseProcesses(new File(filename));
 		n = temp.length;
 
 		String file_output = "";
-		file_output += srt_simulation(temp);
+		file_output += fcfs_simulation(temp);
+
+		n = temp2.length;
+		file_output += srt_simulation(temp2);
 
 		try {
 			printToFile(file_output, new File(args[1]));
@@ -116,6 +120,7 @@ public class Project1 {
 		int t = 0;
 		PriorityQueue<Process> q = new PriorityQueue<>();
 		System.out.printf("time %dms: Simulator started for SRT [Q <empty>]\n", t);
+//		printProcess(processes);
 		boolean waiting = false, exit = false, waiting_next = false;
 		int waiting_for = 0;
 		PriorityQueue<Process> added = new PriorityQueue<>();
@@ -128,6 +133,8 @@ public class Project1 {
 			boolean arrived = false;
 			// NOTE: once processes are finished, burst_amt--, io_time_current
 			// starts to decrement
+			
+			
 			
 			for (Process p : processes) {
 				if (p.state != State.TERMINATED) {
@@ -170,6 +177,8 @@ public class Project1 {
 						t += 8;
 						prem = true;
 						processes[y].state = State.READY;
+						processes[y].preemptions = processes[y].preemptions + 1;
+						System.out.printf("time %dms: Process %s arrived and will preempt %s %s %d\n", t , p.process_id, ss , queueToString(q), processes[y].preemptions);
 						p.state = State.RUNNING;
 						q.add(processes[y]);
 						System.out.printf("time %dms: Process %s started using the CPU %s\n", t, p.process_id,
@@ -234,7 +243,9 @@ public class Project1 {
 				}
 				waiting_next = false;
 				t++;
+				
 				waiting_for--;
+
 				if (waiting_for == 0)
 					waiting = false;
 				
@@ -248,11 +259,11 @@ public class Project1 {
 					}
 				}
 				if (q.isEmpty()) {
-					
 					t++;
+
 					if(hasout) {
 						for(Process p: added) {
-							System.out.printf("time %dms:Process %s completed I/O; added to ready queue %s\n", time,
+							System.out.printf("time %dms: Process %s completed I/O; added to ready queue %s\n", time,
 									p.process_id, queueToString(q));
 						}
 						hasout = false;
@@ -301,7 +312,6 @@ public class Project1 {
 					continue;
 				}
 				Process run = processes[running_index];
-
 				run.turnaround_time++;
 				run.burst_current--;
 				run.cpu_burst_time_actual++;
@@ -331,6 +341,7 @@ public class Project1 {
 						} else {
 
 							run.io_time_next = t + run.io_time + t_cs / 2;
+							
 							System.out.printf("time %dms: Process %s completed a CPU burst; %d burst%s to go %s\n", t,
 									run.process_id, run.number_bursts, run.number_bursts > 1 ? "s" : "",
 									queueToString(q));
@@ -343,15 +354,19 @@ public class Project1 {
 						run.state = State.TERMINATED;
 						run.io_time_current = 0;
 					}
+
+
 					run.burst_current = run.cpu_burst_time;
 					run.cpu_burst_time_actual--;
+					
 					if (run.state != State.TERMINATED)
 						run.state = State.BLOCKED;
 
 					// NOTE: THIS ONLY WOULD APPLY IF EVERY TIME A PROCESS
 					// ***ENDS*** THERE IS A CONTEXT SWITCH
 					run.context_switches++;
-
+					run.turnaround_time++;
+					run .wait_time++;
 					waiting = true;
 					waiting_for = t_cs - 1;
 
@@ -365,13 +380,15 @@ public class Project1 {
 					for(Process p: added) {
 						if(p.burst_current < max) {
 							q.remove(p);
-							System.out.printf("time %dms: 22 Process %s completed I/O and will preempt %s %s\n", time,
+							System.out.printf("time %dms: Process %s completed I/O and will preempt %s %s\n", time,
 									p.process_id, run.process_id, queueToString(q));
 							run.state = State.READY;
-							t += 8;
+							run.preemptions = run.preemptions + 1;
 							prem = true;
 							p.state = State.RUNNING;
 							q.add(run);
+
+							t += 8;
 							System.out.printf("time %dms: Process %s started using the CPU %s\n", t, p.process_id,
 									queueToString(q));
 							t--;
@@ -385,16 +402,22 @@ public class Project1 {
 					hasout = false;
 				}
 				t++;
+				
+
 //				if(t<1000 && t>400) {
 //					System.out.printf("time %dms: Here %s \n", t , queueToString(q));
 //					}
-				if (!running(processes))
+				if (!running(processes)) {
 					t += t_cs / 2 - 1;
+//					run.context_switches++;
+
+				}
+
 			}
 
 		}
 
-		System.out.printf("time %dms: Simulator ended for FCFS\n\n", t);
+		System.out.printf("time %dms: Simulator ended for SRT\n\n", t);
 
 		int cpubursttime = 0;
 		int total_cpu_bursts = 0;
@@ -410,9 +433,9 @@ public class Project1 {
 			turnaroundtime += p.turnaround_time;
 			contextswitches += p.context_switches;
 			preemptions += p.preemptions;
-
+//			System.out.printf("time %dms: %d \n\n", t , preemptions);
 		}
-		String ret = "Algorithm FCFS\n";
+		String ret = "Algorithm SRT\n";
 		ret += String.format("-- average CPU burst time: %.2f ms\n", (double) cpubursttime / (double) total_cpu_bursts);
 		ret += String.format("-- average wait time: %.2f ms\n", (double) waittime / (double) total_cpu_bursts);
 		ret += String.format("-- average turnaround time: %.2f ms\n",
@@ -554,6 +577,7 @@ public class Project1 {
 					waiting_next = true;
 					waiting_for += 4;
 				}
+				
 				continue;
 			}
 
