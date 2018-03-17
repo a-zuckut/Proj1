@@ -257,14 +257,14 @@ public class Project1 {
 		ArrayList<Process> added = new ArrayList<>();
 		int time = -1;
 		boolean hasout = false;
-
+		
 		while (running(processes) && !exit) {
 
 			waiting = waiting_next || waiting;
 			boolean arrived = false;
 			// NOTE: once processes are finished, burst_amt--, io_time_current
 			// starts to decrement
-
+			
 			for (Process p : processes) {
 				if (p.state != State.TERMINATED) {
 					exit = false;
@@ -333,6 +333,12 @@ public class Project1 {
 					waiting_next = true;
 					waiting_for += 4;
 				}
+				
+				for(Process ps: processes) {
+					if(ps.state == State.READY) {
+						ps.wait_time++;
+					}
+				}
 				continue;
 			}
 
@@ -341,6 +347,9 @@ public class Project1 {
 			if (waiting) {
 				for(Process ps: processes) {
 					if(State.READY == ps.state) {
+						ps.turnaround_time++;
+					}
+					if(State.RUNNING == ps.state) {
 						ps.turnaround_time++;
 					}
 				}
@@ -369,13 +378,14 @@ public class Project1 {
 					continue;
 				}
 				Process run = q.remove();
+				// Additional wait time because we are just 'starting'
+				run.wait_time++;
 
 				System.out.printf("time %dms: Process %s started using the CPU %s\n", t, run.process_id,
 						queueToString(q));
 
 				run.state = State.RUNNING;
 				run.burst_current--;
-				run.cpu_burst_time_actual++;
 				run.turnaround_time++;
 
 				if (run.burst_current == 0) {
@@ -387,6 +397,9 @@ public class Project1 {
 					if(State.READY == ps.state) {
 						ps.turnaround_time++;
 						ps.wait_time++;
+					}
+					if(State.RUNNING == ps.state) {
+						ps.turnaround_time++;
 					}
 				}
 				
@@ -450,7 +463,6 @@ public class Project1 {
 						run.io_time_current = 0;
 					}
 					run.burst_current = run.cpu_burst_time;
-					run.cpu_burst_time_actual--;
 					if (run.state != State.TERMINATED)
 						run.state = State.BLOCKED;
 
@@ -501,9 +513,9 @@ public class Project1 {
 		}
 		String ret = "Algorithm FCFS\n";
 		ret += String.format("-- average CPU burst time: %.2f ms\n", (double) cpubursttime / (double) total_cpu_bursts);
-		ret += String.format("-- average wait time: %.2f ms\n", (double) waittime / (double) total_cpu_bursts);
-		ret += String.format("-- average turnaround time: %.2f ms\n",
-				(double) turnaroundtime / (double) total_cpu_bursts);
+		ret += String.format("-- average wait time: %.2f ms(%d/%d)\n", (double) waittime / (double) total_cpu_bursts, waittime, total_cpu_bursts);
+		ret += String.format("-- average turnaround time: %.2f ms(%d/%d)\n",
+				(double) turnaroundtime / (double) total_cpu_bursts, turnaroundtime, total_cpu_bursts);
 		ret += String.format("-- total number of context switches: %d\n", contextswitches);
 		ret += String.format("-- total number of preemptions: %d\n", preemptions);
 		return ret;
