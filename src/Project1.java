@@ -1319,6 +1319,17 @@ public class Project1 {
 			this.v=v;
 		}
 	}
+	
+	public static class Preemptee {
+		int timeRemaining = 4;
+		Process p;
+		
+		public Preemptee(Process p) {
+			this.p = p;
+		}
+		
+	}
+	 
 
 	public static class Process implements Comparable<Process> {
 		int ready;
@@ -1326,6 +1337,7 @@ public class Project1 {
 		int initial_arrival_time;
 		int cpu_burst_time;
 		int number_bursts;
+		int timeRemaining;
 
 		int number_bursts_CONSTANT;
 
