@@ -1337,7 +1337,7 @@ public class Project1 {
 		int initial_arrival_time;
 		int cpu_burst_time;
 		int number_bursts;
-		int timeRemaining;
+		int remainingTime;
 
 		int number_bursts_CONSTANT;
 
