@@ -713,13 +713,11 @@ public class Project1 {
 		Vector<String> added_prints = new Vector<>();
 
 		while (!queue.isEmpty() || !process_in_io.isEmpty() || !initial_copy.isEmpty() || !simulator.idle()) {
-			added_turn = new Vector<>();
+			added_turn = new Vector<>(); // resetting printing vectors
 			added_prints = new Vector<>();
-			global_counter++;
+			global_counter++; // increase t
 
 			for (int i = 0; i < queue.size(); i++) {
-				// if (i == 0 && cpu.unLoading())
-				// continue;
 				queue.get(i).wait_time++;
 			}
 
@@ -993,13 +991,15 @@ public class Project1 {
 
 	public static class Sim {
 
-		int t_cs;
+		int t_cs; // input
 		Process current_process;
-		long counter;
-		long switch_over;
-		boolean in_switch;
-		boolean idle;
-		boolean load;
+		long counter; // timing
+		long switch_over; // how long to be in context switch (t_cs/2 : x < 4)
+		boolean in_switch; // context switch or na
+		boolean idle; // idle or not
+		boolean load; // loading a new process -> context switch
+		
+		// Add in methods/variables for TSing
 
 		public Sim() {
 			t_cs = 8;
