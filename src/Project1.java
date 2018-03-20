@@ -30,8 +30,8 @@ public class Project1 {
 	// FOR RR Algorithm
 	public static int t_slice = 80; // TIME SLICE
 	public static boolean front_of_ready_queue = false; // PROCESSES TO BE ADDED
-														// TO FRONT/END OF READY
-														// QUEUE
+	// TO FRONT/END OF READY
+	// QUEUE
 
 	public static void main(String[] args) {
 
@@ -80,7 +80,206 @@ public class Project1 {
 	 * 
 	 * @param processes
 	 */
-	public static void rr_simulation(Process[] processes) {
+	public static String rr_simulation(Process[] p) {
+		int tBurstTime = 0;
+		int tCS = 0;
+		int tWait = 0;
+		int tTurnaround = 0;
+		int tPreemption = 0;
+		boolean preempt = false;
+		Vector<Process> initial_copy = new Vector<Process>();
+		for (Process ps : p)
+			initial_copy.addElement(ps);
+		Vector<Process> process_in_io = new Vector<>();
+		Vector<Process> queue = new Vector<>();
+
+		Sim simulator = new Sim();
+
+		int globalTime = -1; // start out with -1 -> go to 0 at first timing
+		boolean new_process_into_IO = false;
+		int tBursts = 0;
+
+		// Initial calculations because yaknow
+		for (int i = 0; i < p.length; i++) {
+			tBursts += p[i].burstsLeft();
+			tBurstTime += p[i].burstsLeft() * p[i].cpu_burst_time;
+			tTurnaround += p[i].burstsLeft() * simulator.t_cs / 2;
+			p[i].remainingTime = p[i].cpu_burst_time;
+		}
+		System.out.print("time 0ms: Simulator started for RR " + queueToString(queue));
+		Vector<Process> added_turn = new Vector<>();
+		Vector<String> added_prints = new Vector<>();
+		Vector<Preemptee> preempts = new Vector<>();
+
+		while (!queue.isEmpty() || !process_in_io.isEmpty() || !initial_copy.isEmpty() || !simulator.idle()) {
+			added_turn = new Vector<>(); // resetting printing vectors
+			added_prints = new Vector<>();
+			globalTime++; // increase t
+			
+			if (!preempts.isEmpty()) {
+				for (int i=0; i<preempts.size(); i++) {
+					//System.out.println("pre: " + preempts.get(i).p.process_id + " remaining: " + preempts.get(i).timeRemaining);
+					preempts.get(i).timeRemaining--;
+					if (preempts.get(i).timeRemaining == 0) {
+						queue.add(preempts.get(i).p);
+						preempts.remove(preempts.get(i));
+					}
+				}
+			}
+
+			for (int i = 0; i < queue.size(); i++) {
+				queue.get(i).wait_time++;
+			}
+
+			while (initial_copy.size() != 0) {
+				if (globalTime == initial_copy.get(0).initial_arrival_time) {
+					Process ps = initial_copy.get(0);
+					added_turn.add(ps);
+					initial_copy.remove(0);
+					ps.ready = globalTime;
+					added_prints.add("time " + globalTime + "ms: Process " + ps.process_id
+							+ " arrived and added to ready queue ");
+				} else
+					break;
+			}
+
+			simulator.setCounter(globalTime);
+			if (new_process_into_IO) {
+				process_in_io.sort(new Comparator<Process>() {
+					@Override
+					public int compare(Process o1, Process o2) {
+						return Integer.valueOf(o1.io_time_current).compareTo(Integer.valueOf(o2.io_time_current));
+					}
+				});
+			}
+
+			for (int i = 0; i < process_in_io.size(); i++) {
+				process_in_io.get(i).io_time_current--;
+			}
+
+			while (!process_in_io.isEmpty()) {
+				if (process_in_io.get(0).io_time_current == -4) {
+					Process ps = process_in_io.get(0);
+					added_turn.add(ps);
+					added_prints.add("time " + globalTime + "ms: Process " + ps.process_id
+							+ " completed I/O; added to ready queue ");
+					ps.ready = globalTime;
+					process_in_io.remove(0);
+				} else
+					break;
+			}
+
+			// if we context switch, we need to break out of the loop
+			if (simulator.contextSwitch()) {
+				printAll(added_turn, added_prints, queue);
+				continue;
+			}
+
+			// CPU
+			if (simulator.idle()) {
+				printAll(added_turn, added_prints, queue);
+				if (!queue.isEmpty()) {
+					Process ps = queue.get(0);
+					simulator.load(ps);
+					tCS++;
+					queue.remove(0);
+					simulator.setIdle(false);
+				}
+			} else {
+				// burst is either done, not done or has reached the time slice
+
+				// If the Burst time reaches the time slice allocated, send it back to queue
+				// Bring in the next process
+				// Also check that the process did not end at the same time as the time slice
+				if (simulator.getCurrentProcess().remainingTime
+						- simulator.getCurrentProcess().burst_current == t_slice 
+						&& simulator.getCurrentProcess().burst_current > 0) {
+					if (!queue.isEmpty()) {
+						System.out.print("time " + globalTime + "ms: Time slice expired; process "
+								+ simulator.getCurrentProcess().process_id + " preempted with "
+								+ simulator.getCurrentProcess().burst_current + "ms to go " + queueToString(queue));
+						preempts.add(new Preemptee(simulator.getCurrentProcess()));
+						simulator.getCurrentProcess().remainingTime = simulator.getCurrentProcess().burst_current;
+						simulator.setIdle(true);
+						simulator.unload();
+						tPreemption++;
+						preempt = true;
+						continue;
+					} else {
+						System.out.print("time " + globalTime
+								+ "ms: Time slice expired; no preemption because ready queue is empty "
+								+ queueToString(queue));
+						simulator.getCurrentProcess().remainingTime = simulator.getCurrentProcess().burst_current;
+						preempt = false;
+					}
+
+				} 
+				// Process still running, and hasn't been preempted by the time slice
+				if (simulator.getCurrentProcess().burst_current > 0) { // process
+																				   // still
+					// Process just started running 							   // running
+					Process ps = simulator.getCurrentProcess();
+					if (ps.burst_current == ps.cpu_burst_time) {
+						System.out.print("time " + globalTime + "ms: Process " + ps.process_id
+								+ " started using the CPU " + queueToString(queue));
+					}
+					// Process returning to running after having been preempted
+					else if (ps.burst_current == ps.remainingTime && preempt) {
+						System.out.print(
+								"time " + globalTime + "ms: Process " + ps.process_id + " started using the CPU with "
+										+ ps.remainingTime + "ms remaining " + queueToString(queue));
+					}
+					simulator.burst();
+				} 
+				// Process Finishes Burst
+				else { // process is done...
+					// finishes burst
+					Process ps = simulator.getCurrentProcess();
+					ps.remainingTime = ps.cpu_burst_time;
+					if (ps.burstsLeft() > 0) {
+						System.out.print(
+								"time " + globalTime + "ms: Process " + ps.process_id + " completed a CPU burst; "
+										+ ps.burstsLeft() + " burst" + (ps.burstsLeft() > 1 ? "s" : "") + " to go ");
+						tTurnaround += globalTime - ps.ready;
+					} else {
+						System.out.print("time " + globalTime + "ms: Process " + ps.process_id + " terminated ");
+						tWait += ps.getWait();
+						tTurnaround += globalTime - ps.ready;
+					}
+					System.out.print(queueToString(queue));
+					ps.burst_current = ps.cpu_burst_time;
+					ps.io_time_current = ps.io_time;
+					simulator.setIdle(true);
+					simulator.unload();
+					if (ps.burstsLeft() > 0) {
+						System.out.printf(
+								"time %dms: Process %s switching out of CPU; will block on I/O until time %dms %s",
+								globalTime, ps.process_id, globalTime + ps.io_time + simulator.t_cs / 2,
+								queueToString(queue));
+						queueToString(queue);
+						process_in_io.add(ps);
+						new_process_into_IO = true;
+					}
+				}
+				printAll(added_turn, added_prints, queue);
+			}
+
+		}
+
+		System.out.print("time " + (globalTime + 4) + "ms: Simulator ended for RR");
+		
+		double wait = tWait / (double) tBursts;
+		double turnaround = tTurnaround / (double) tBursts;
+		double burst = tBurstTime / (double) tBursts;
+
+		String ret = "Algorithm RR\n";
+		ret += String.format("-- average CPU burst time: %.2f ms\n", burst);
+		ret += String.format("-- average wait time: %.2f ms\n", wait);
+		ret += String.format("-- average turnaround time: %.2f ms\n", turnaround);
+		ret += String.format("-- total number of context switches: %d\n", tCS);
+		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
+
+		return ret;
 
 	}
 
