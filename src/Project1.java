@@ -1,11 +1,9 @@
-import java.awt.font.TextAttribute;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -13,9 +11,6 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Vector;
-
-import org.omg.CORBA.PUBLIC_MEMBER;
-import org.omg.CORBA.DynAnyPackage.TypeMismatch;
 
 public class Project1 {
 
@@ -998,7 +993,7 @@ public class Project1 {
 		boolean in_switch; // context switch or na
 		boolean idle; // idle or not
 		boolean load; // loading a new process -> context switch
-		
+
 		// Add in methods/variables for TSing
 
 		public Sim() {
