@@ -39,13 +39,16 @@ public class Project1 {
 
 		Process[] temp = xProcesses.clone();
 		Process[] temp2 = parseProcesses(new File(filename));
+		Process[] temp3 = parseProcesses(new File(filename));
 		n = temp.length;
 
 		String file_output = "";
-//		file_output += fcfs(temp);
+		file_output += fcfs(temp);
+		System.out.println("");
+		file_output += rr_simulation(temp3);
 
 		n = temp2.length;
-		 file_output += srt_simulation(temp2);
+//		 file_output += srt_simulation(temp2);
 
 		try {
 			printToFile(file_output, new File(args[1]));
@@ -717,7 +720,7 @@ public class Project1 {
 						if(simulator.getCurrentProcess().burst_current > ps.burst_current) {
 							Process old = simulator.getCurrentProcess();
 							simulator.loadNewProcessForSRT(ps);
-							csWaitQue.add(Pair(old, 4)) ;
+//							csWaitQue.add(Pair(old, 4)) ; // TODO @Issac
 							csWaitTime.add(4);
 							added_prints.add("time " + global_counter + "ms: Process " + ps.process_id
 									+ " completed I/O and will preempt " + old.process_id);
