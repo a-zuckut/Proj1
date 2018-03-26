@@ -316,7 +316,6 @@ public class Project1 {
 					ps.burst_current);
 		}
 	}
-
 	public static String srt_simulation(Process[] p) {
 
  
@@ -648,6 +647,7 @@ public class Project1 {
 		Vector<Process> queue = new Vector<>();
 		Vector<Process> csWaitQue= new Vector<>();
 		Vector<Integer> csWaitTime= new Vector<>();
+		boolean preempt = false;
 
 		Sim simulator = new Sim();
 
@@ -660,32 +660,57 @@ public class Project1 {
 			tBursts += p[i].burstsLeft();
 			tBurstTime += p[i].burstsLeft() * p[i].cpu_burst_time;
 			tTurnaround += p[i].burstsLeft() * simulator.t_cs / 2;
+			p[i].remainingtime = p[i].cpu_burst_time;
 		}
 
 		System.out.print("time 0ms: Simulator started for SRT " + queueToString(queue));
 		Vector<Process> added_turn = new Vector<>();
 		Vector<String> added_prints = new Vector<>();
-
+		Vector<Preemptee> preempts = new Vector<>();
+		
 		while (!queue.isEmpty() || !process_in_io.isEmpty() || !initial_copy.isEmpty() || !simulator.idle()) {
 			added_turn = new Vector<>(); // resetting printing vectors
 			added_prints = new Vector<>();
 			global_counter++; // increase t
 			
+			for (int i=0; i<preempts.size(); i++ ) 
+			{
+				preempts.get(i).timeRemaining--;
+				if (preempts.get(i).timeRemaining == 0) {
+					queue.add(preempts.get(i).p);
+					preempts.remove(preempts.get(i));
+				}
+				
+			}
 			for (int i = 0; i < queue.size(); i++) {
 				queue.get(i).wait_time++;
 			}
 
+		
 			while (initial_copy.size() != 0) {
 				if (global_counter == initial_copy.get(0).initial_arrival_time) {
 					Process ps = initial_copy.get(0);
-					added_turn.add(ps);
 					initial_copy.remove(0);
 					ps.ready = global_counter;
-					if(simulator.getCurrentProcess() != null) {
-					System.out.print("Process running burst: " + simulator.getCurrentProcess().burst_current  + " New burst: " + ps.burst_current);
+					//If the current running process has more bursts to fin then the other, 
+					if(simulator.getCurrentProcess() != null && simulator.getCurrentProcess().burst_current > ps.burst_current  
+							&& simulator.getCurrentProcess().io_time_current == 0) {
+//					System.out.print("Process running burst: " + simulator.getCurrentProcess().burst_current  + " New burst: " + ps.burst_current);
+						Process old = simulator.getCurrentProcess();
+						old.remainingtime = old.burst_current;
+						simulator.loadNewProcessForSRT2(ps);
+						preempts.add(new Preemptee(old));
+						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
+								+ " arrived and will preempt " + old.process_id + " " + queueToString(queue));
+						preempt = true;
+						tCS++;
+						tPreemption ++;
 					}
+					else{ 
+					added_turn.add(ps);
 					added_prints.add("time " + global_counter + "ms: Process " + ps.process_id
 							+ " arrived and added to ready queue ");
+					}
 				} else
 					break;
 			}
@@ -715,33 +740,34 @@ public class Project1 {
 						process_in_io.remove(0);
 					}
 					else {
-						//If the current running process has more burts to fin then the other, 
+						//If the current running process has more bursts to fin then the other, 
 						//Preform a context switch
 						if(simulator.getCurrentProcess().burst_current > ps.burst_current) {
 							Process old = simulator.getCurrentProcess();
-							simulator.loadNewProcessForSRT(ps);
-//							csWaitQue.add(Pair(old, 4)) ; // TODO @Issac
-							csWaitTime.add(4);
-							added_prints.add("time " + global_counter + "ms: Process " + ps.process_id
-									+ " completed I/O and will preempt " + old.process_id);
 							ps.ready = global_counter;
+							old.remainingtime = old.burst_current;
+							simulator.loadNewProcessForSRT(ps);
+							preempts.add(new Preemptee(old));
+							System.out.print("time " + global_counter + "ms: Process " + ps.process_id
+									+ " completed I/O and will preempt " + old.process_id + " "+ queueToString(queue) );
 							process_in_io.remove(0);
+							preempt = true;
+							tCS++;
+							tPreemption ++;
+
+							
 						}
-						else {
+						else if(simulator.getCurrentProcess().process_id != ps.process_id){
 							added_turn.add(ps);
 							added_prints.add("time " + global_counter + "ms: Process " + ps.process_id
 									+ " completed I/O; added to ready queue ");
 							ps.ready = global_counter;
 							process_in_io.remove(0);
+							preempt = false;
 						}
 					}
 				} else
 					break;
-			}
-			if(!csWaitQue.isEmpty()) {
-				for(Process ps : csWaitQue) {
-					
-				}
 			}
 			// if we context switch, we need to break out of the loop
 			if (simulator.contextSwitch()) {
@@ -751,6 +777,12 @@ public class Project1 {
 			
 			// CPU
 			if (simulator.idle()) {
+				queue.sort(new Comparator<Process>() { //Sort ready que
+					@Override
+					public int compare(Process o1, Process o2) {
+						return Integer.valueOf(o1.burst_current).compareTo(Integer.valueOf(o2.burst_current));
+					}
+				});
 				printAll(added_turn, added_prints, queue);
 				if (!queue.isEmpty()) {
 					Process ps = queue.get(0);
@@ -765,9 +797,21 @@ public class Project1 {
 																		// still
 																		// running
 					Process ps = simulator.getCurrentProcess();
+					queue.sort(new Comparator<Process>() { //Sort ready que
+						@Override
+						public int compare(Process o1, Process o2) {
+							return Integer.valueOf(o1.burst_current).compareTo(Integer.valueOf(o2.burst_current));
+						}
+					});
+//					System.out.print("time " + global_counter + "Sorted Queue " + queueToString(queue));
 					if (ps.burst_current == ps.cpu_burst_time) {
 						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
 								+ " started using the CPU " + queueToString(queue));
+						simulator.last_process = ps;
+					}
+					else if (ps.burst_current == ps.remainingtime && simulator.last_process != ps) {
+						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
+								+ " started using the CPU with "+ps.remainingtime +"ms remaining " + queueToString(queue));
 					}
 					simulator.burst();
 				} else { // process is done...
@@ -809,7 +853,7 @@ public class Project1 {
 		double turnaround = tTurnaround / (double) tBursts;
 		double burst = tBurstTime / (double) tBursts;
 
-		String ret = "Algorithm FCFS\n";
+		String ret = "Algorithm SRT\n";
 		ret += String.format("-- average CPU burst time: %.2f ms\n", burst);
 		ret += String.format("-- average wait time: %.2f ms\n", wait);
 		ret += String.format("-- average turnaround time: %.2f ms\n", turnaround);
@@ -819,28 +863,33 @@ public class Project1 {
 		return ret;
 	}
 
-	public static String getRunningProcess(Process[] processes) {
-		for (Process ps : processes) {
-			// System.out.printf("ProcessState is %s \n", ps.state );
-			if (ps.state == State.RUNNING) {
-				return ps.process_id;
-			}
+public static void printAllSRT(Vector<Process> added_turn, Vector<String> added_prints, Vector<Process> ready_queue) {
+		if (added_turn.size() == 0)
+			return;
+		int[] order = new int[added_turn.size()];
+		String[] process = new String[added_turn.size()];
+		for (int i = 0; i < added_turn.size(); i++) {
+			process[i] = added_turn.elementAt(i).process_id;
 		}
-		return "n";
-	}
+		String[] temp = process.clone();
+		Arrays.sort(process);
 
-	public static int getRunningProcessIndex(Process[] processes) {
-		int i = 0;
-		for (Process ps : processes) {
-			// System.out.printf("ProcessState is %s \n", ps.state );
-			if (ps.state == State.RUNNING) {
-				return i;
+		for (int i = 0; i < process.length; i++) {
+			int j = 0;
+			for (j = 0; j < temp.length; j++) {
+				if (temp[i].equals(process[j])) {
+					break;
+				}
 			}
-			i++;
+			order[i] = j;
 		}
-		return -1;
-	}
 
+		for (int i = 0; i < added_turn.size(); i++) {
+			ready_queue.add(added_turn.get(order[i]));
+			System.out.print(added_prints.get(order[i]) + queueToString(ready_queue));
+		}
+
+	}
 	private static String queueToString(Queue<Process> queue) {
 		Process[] xProcesses = new Process[queue.size()];
 		xProcesses = queue.toArray(xProcesses);
