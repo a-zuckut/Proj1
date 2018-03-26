@@ -45,7 +45,11 @@ public class Project1 {
 		String file_output = "";
 		file_output += fcfs(temp);
 		System.out.println("");
+		temp = xProcesses.clone();
+		file_output += srt_simulation(temp2);
+		System.out.println("");
 		file_output += rr_simulation(temp3);
+
 
 		n = temp2.length;
 //		 file_output += srt_simulation(temp2);
@@ -660,7 +664,7 @@ public class Project1 {
 			tBursts += p[i].burstsLeft();
 			tBurstTime += p[i].burstsLeft() * p[i].cpu_burst_time;
 			tTurnaround += p[i].burstsLeft() * simulator.t_cs / 2;
-			p[i].remainingtime = p[i].cpu_burst_time;
+			p[i].remainingTime = p[i].cpu_burst_time;
 		}
 
 		System.out.print("time 0ms: Simulator started for SRT " + queueToString(queue));
@@ -697,7 +701,7 @@ public class Project1 {
 							&& simulator.getCurrentProcess().io_time_current == 0) {
 //					System.out.print("Process running burst: " + simulator.getCurrentProcess().burst_current  + " New burst: " + ps.burst_current);
 						Process old = simulator.getCurrentProcess();
-						old.remainingtime = old.burst_current;
+						old.remainingTime = old.burst_current;
 						simulator.loadNewProcessForSRT2(ps);
 						preempts.add(new Preemptee(old));
 						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
@@ -745,7 +749,7 @@ public class Project1 {
 						if(simulator.getCurrentProcess().burst_current > ps.burst_current) {
 							Process old = simulator.getCurrentProcess();
 							ps.ready = global_counter;
-							old.remainingtime = old.burst_current;
+							old.remainingTime = old.burst_current;
 							simulator.loadNewProcessForSRT(ps);
 							preempts.add(new Preemptee(old));
 							System.out.print("time " + global_counter + "ms: Process " + ps.process_id
@@ -809,9 +813,9 @@ public class Project1 {
 								+ " started using the CPU " + queueToString(queue));
 						simulator.last_process = ps;
 					}
-					else if (ps.burst_current == ps.remainingtime && simulator.last_process != ps) {
+					else if (ps.burst_current == ps.remainingTime && simulator.last_process != ps) {
 						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
-								+ " started using the CPU with "+ps.remainingtime +"ms remaining " + queueToString(queue));
+								+ " started using the CPU with "+ps.remainingTime +"ms remaining " + queueToString(queue));
 					}
 					simulator.burst();
 				} else { // process is done...
@@ -1445,7 +1449,7 @@ public static void printAllSRT(Vector<Process> added_turn, Vector<String> added_
 		boolean in_switch; // context switch or na
 		boolean idle; // idle or not]
 		boolean load; // loading a new process -> context switch
-
+		Process last_process = null;
 		// Add in methods/variables for TSing
 
 		public Sim() {
@@ -1491,6 +1495,11 @@ public static void printAllSRT(Vector<Process> added_turn, Vector<String> added_
 		void loadNewProcessForSRT(Process p) {
 			current_process = p;
 			switch_over = counter + t_cs;
+		}
+		
+		void loadNewProcessForSRT2(Process p) {
+			current_process = p;
+			switch_over = counter + 9;			
 		}
 
 		void unload() {
