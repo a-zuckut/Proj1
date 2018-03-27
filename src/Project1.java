@@ -702,6 +702,10 @@ public class Project1 {
 			added_prints = new Vector<>();
 			global_counter++; // increase t
 
+			for (int i = 0; i < queue.size(); i++) {
+				queue.get(i).wait_time++;
+			}
+
 			for (int i = 0; i < preempts.size(); i++) {
 				preempts.get(i).timeRemaining--;
 				if (preempts.get(i).timeRemaining == 0) {
@@ -709,9 +713,6 @@ public class Project1 {
 					preempts.remove(preempts.get(i));
 				}
 
-			}
-			for (int i = 0; i < queue.size(); i++) {
-				queue.get(i).wait_time++;
 			}
 
 			while (initial_copy.size() != 0) {
