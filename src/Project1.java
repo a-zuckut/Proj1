@@ -385,7 +385,7 @@ public class Project1 {
 					// then the other,
 					if (simulator.getCurrentProcess() != null
 							&& simulator.getCurrentProcess().burst_current > ps.burst_current
-							&& simulator.getCurrentProcess().io_time_current == 0) {
+							&& simulator.getCurrentProcess().state == State.RUNNING) {
 						Process old = simulator.getCurrentProcess();
 						old.remainingTime = old.burst_current;
 						simulator.loadNewProcessForSRT2(ps);
