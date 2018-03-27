@@ -27,7 +27,7 @@ public class Project1 {
 
 	// FOR RR Algorithm
 	public static int t_slice = 80; // TIME SLICE
-	public static boolean front_of_ready_queue = false; // PROCESSES TO BE ADDED
+	public static boolean frontOfQueue = false; // PROCESSES TO BE ADDED
 	// TO FRONT/END OF READY
 	// QUEUE
 
@@ -44,6 +44,13 @@ public class Project1 {
 		Process[] temp2 = parseProcesses(new File(filename));
 		Process[] temp3 = parseProcesses(new File(filename));
 		n = temp.length;
+		
+		if (args.length == 3) {
+			String rr_add = args[2];
+			if (rr_add.equals("BEGINNING")) {
+				frontOfQueue = true;
+			}
+		}
 
 		String file_output = "";
 		file_output += fcfs(temp);
@@ -971,7 +978,13 @@ public class Project1 {
 		}
 
 		for (int i = 0; i < added_turn.size(); i++) {
-			ready_queue.add(added_turn.get(order[i]));
+			for (int i = 0; i < added_turn.size(); i++) {
+			if (frontOfQueue) {
+				ready_queue.add(0, added_turn.get(order[i]));
+			}
+			else {
+				ready_queue.add(added_turn.get(order[i]));
+			}
 			System.out.print(added_prints.get(order[i]) + queueToString(ready_queue));
 		}
 
