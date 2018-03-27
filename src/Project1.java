@@ -119,7 +119,9 @@ public class Project1 {
 			added_turn = new Vector<>(); // resetting printing vectors
 			added_prints = new Vector<>();
 			globalTime++; // increase t
-
+			for (int i = 0; i < queue.size(); i++) {
+				queue.get(i).wait_time++;
+			}
 			if (!preempts.isEmpty()) {
 				for (int i = 0; i < preempts.size(); i++) {
 					// System.out.println("pre: " + preempts.get(i).p.process_id
@@ -131,11 +133,7 @@ public class Project1 {
 					}
 				}
 			}
-
-			for (int i = 0; i < queue.size(); i++) {
-				queue.get(i).wait_time++;
-			}
-
+			
 			while (initial_copy.size() != 0) {
 				if (globalTime == initial_copy.get(0).initial_arrival_time) {
 					Process ps = initial_copy.get(0);
