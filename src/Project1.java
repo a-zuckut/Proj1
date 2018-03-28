@@ -29,6 +29,7 @@ public class Project1 {
 	public static boolean frontOfQueue = false; // PROCESSES TO BE ADDED
 	// TO FRONT/END OF READY
 	// QUEUE
+	public static boolean rr = false;
 
 	public static void main(String[] args) {
 
@@ -57,6 +58,7 @@ public class Project1 {
 		temp = xProcesses.clone();
 		file_output += srt_simulation(temp2);
 		System.out.println("");
+		rr = true;
 		file_output += rr_simulation(temp3);
 
 		n = temp2.length;
@@ -988,7 +990,7 @@ public class Project1 {
 		}
 
 		for (int i = 0; i < added_turn.size(); i++) {
-			if (frontOfQueue) {
+			if (frontOfQueue && rr) {
 				ready_queue.add(0, added_turn.get(order[i]));
 			} else {
 				ready_queue.add(added_turn.get(order[i]));
