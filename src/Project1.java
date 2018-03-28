@@ -4,15 +4,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Vector;
-
-import javax.xml.bind.util.ValidationEventCollector;
 
 public class Project1 {
 
@@ -285,9 +283,9 @@ public class Project1 {
 		double burst = tBurstTime / (double) tBursts;
 
 		String ret = "Algorithm RR\n";
-		ret += String.format("-- average CPU burst time: %.2f ms\n", burst);
-		ret += String.format("-- average wait time: %.2f ms\n", wait);
-		ret += String.format("-- average turnaround time: %.2f ms\n", turnaround);
+		ret += String.format("-- average CPU burst time: %.2f ms\n", new BigDecimal(burst).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average wait time: %.2f ms\n", new BigDecimal(wait).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average turnaround time: %.2f ms\n", new BigDecimal(turnaround).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
 		ret += String.format("-- total number of context switches: %d\n", tCS);
 		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
 
@@ -546,9 +544,9 @@ public class Project1 {
 		double burst = tBurstTime / (double) tBursts;
 
 		String ret = "Algorithm SRT\n";
-		ret += String.format("-- average CPU burst time: %.2f ms\n", burst);
-		ret += String.format("-- average wait time: %.2f ms\n", wait);
-		ret += String.format("-- average turnaround time: %.2f ms\n", turnaround);
+		ret += String.format("-- average CPU burst time: %.2f ms\n", new BigDecimal(burst).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average wait time: %.2f ms\n", new BigDecimal(wait).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average turnaround time: %.2f ms\n", new BigDecimal(turnaround).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
 		ret += String.format("-- total number of context switches: %d\n", tCS);
 		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
 
@@ -946,9 +944,9 @@ public class Project1 {
 		double burst = tBurstTime / (double) tBursts;
 
 		String ret = "Algorithm FCFS\n";
-		ret += String.format("-- average CPU burst time: %.2f ms\n", burst);
-		ret += String.format("-- average wait time: %.2f ms\n", wait);
-		ret += String.format("-- average turnaround time: %.2f ms\n", turnaround);
+		ret += String.format("-- average CPU burst time: %.2f ms\n", new BigDecimal(burst).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average wait time: %.2f ms\n", new BigDecimal(wait).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average turnaround time: %.2f ms\n", new BigDecimal(turnaround).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
 		ret += String.format("-- total number of context switches: %d\n", tCS);
 		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
 
