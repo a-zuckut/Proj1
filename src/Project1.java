@@ -222,6 +222,7 @@ public class Project1 {
 						simulator.unload();
 						tPreemption++;
 						preempt = true;
+						printAll(added_turn, added_prints, queue);
 						continue;
 					} else {
 						System.out.print("time " + globalTime
