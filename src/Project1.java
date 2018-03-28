@@ -368,7 +368,6 @@ public class Project1 {
 			added_turn = new Vector<>(); // resetting printing vectors
 			added_prints = new Vector<>();
 			global_counter++; // increase t
-
 			for (int i = 0; i < queue.size(); i++) {
 				queue.get(i).wait_time++;
 			}
@@ -499,10 +498,12 @@ public class Project1 {
 						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
 								+ " started using the CPU " + queueToString(queue));
 						simulator.last_process = ps;
+						ps.state = State.RUNNING;
 					} else if (ps.burst_current == ps.remainingTime && simulator.last_process != ps) {
 						System.out.print("time " + global_counter + "ms: Process " + ps.process_id
 								+ " started using the CPU with " + ps.remainingTime + "ms remaining "
 								+ queueToString(queue));
+						ps.state = State.RUNNING;
 					}
 					simulator.burst();
 				} else { // process is done...
@@ -529,6 +530,7 @@ public class Project1 {
 								global_counter, ps.process_id, global_counter + ps.io_time + simulator.t_cs / 2,
 								queueToString(queue));
 						queueToString(queue);
+						ps.state = State.BLOCKED;
 						process_in_io.add(ps);
 						new_process_into_IO = true;
 					}
