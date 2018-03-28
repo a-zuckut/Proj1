@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -283,9 +284,9 @@ public class Project1 {
 		double burst = tBurstTime / (double) tBursts;
 
 		String ret = "Algorithm RR\n";
-		ret += String.format("-- average CPU burst time: %.2f ms\n", new BigDecimal(burst).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
-		ret += String.format("-- average wait time: %.2f ms\n", new BigDecimal(wait).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
-		ret += String.format("-- average turnaround time: %.2f ms\n", new BigDecimal(turnaround).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average CPU burst time: %s ms\n", Project1.format(burst));
+		ret += String.format("-- average wait time: %s ms\n", Project1.format(wait));
+		ret += String.format("-- average turnaround time: %s ms\n", Project1.format(turnaround));
 		ret += String.format("-- total number of context switches: %d\n", tCS);
 		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
 
@@ -544,9 +545,9 @@ public class Project1 {
 		double burst = tBurstTime / (double) tBursts;
 
 		String ret = "Algorithm SRT\n";
-		ret += String.format("-- average CPU burst time: %.2f ms\n", new BigDecimal(burst).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
-		ret += String.format("-- average wait time: %.2f ms\n", new BigDecimal(wait).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
-		ret += String.format("-- average turnaround time: %.2f ms\n", new BigDecimal(turnaround).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average CPU burst time: %s ms\n", Project1.format(burst));
+		ret += String.format("-- average wait time: %s ms\n", Project1.format(wait));
+		ret += String.format("-- average turnaround time: %s ms\n", Project1.format(turnaround));
 		ret += String.format("-- total number of context switches: %d\n", tCS);
 		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
 
@@ -944,14 +945,24 @@ public class Project1 {
 		double burst = tBurstTime / (double) tBursts;
 
 		String ret = "Algorithm FCFS\n";
-		ret += String.format("-- average CPU burst time: %.2f ms\n", new BigDecimal(burst).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
-		ret += String.format("-- average wait time: %.2f ms\n", new BigDecimal(wait).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
-		ret += String.format("-- average turnaround time: %.2f ms\n", new BigDecimal(turnaround).setScale(2, RoundingMode.HALF_DOWN).doubleValue());
+		ret += String.format("-- average CPU burst time: %s ms\n", Project1.format(burst));
+		ret += String.format("-- average wait time: %s ms\n", Project1.format(wait));
+		ret += String.format("-- average turnaround time: %s ms\n", Project1.format(turnaround));
 		ret += String.format("-- total number of context switches: %d\n", tCS);
 		ret += String.format("-- total number of preemptions: %d\n", tPreemption);
 
 		return ret;
 	}
+	
+	 private static String format(double d)
+	    {
+	        DecimalFormat df = new DecimalFormat();
+	        df.setMinimumFractionDigits(2);
+	        df.setMaximumFractionDigits(2);
+	        df.setGroupingUsed(false);
+	        df.setRoundingMode(RoundingMode.HALF_EVEN);
+	        return df.format(d);
+	    }
 
 	public static void printAll(Vector<Process> added_turn, Vector<String> added_prints, Vector<Process> ready_queue) {
 		if (added_turn.size() == 0)
