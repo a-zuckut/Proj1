@@ -44,7 +44,7 @@ public class Project1 {
 		Process[] temp2 = parseProcesses(new File(filename));
 		Process[] temp3 = parseProcesses(new File(filename));
 		n = temp.length;
-		
+
 		if (args.length == 3) {
 			String rr_add = args[2];
 			if (rr_add.equals("BEGINNING")) {
@@ -140,7 +140,7 @@ public class Project1 {
 					}
 				}
 			}
-			
+
 			while (initial_copy.size() != 0) {
 				if (globalTime == initial_copy.get(0).initial_arrival_time) {
 					Process ps = initial_copy.get(0);
@@ -471,8 +471,7 @@ public class Project1 {
 
 			// CPU
 			if (simulator.idle()) {
-				queue.sort(new Comparator<Process>() { // Sort ready que
-					@Override
+				queue.sort(new Comparator<Process>() { // Sort ready queue
 					public int compare(Process o1, Process o2) {
 						return Integer.valueOf(o1.burst_current).compareTo(Integer.valueOf(o2.burst_current));
 					}
@@ -978,11 +977,9 @@ public class Project1 {
 		}
 
 		for (int i = 0; i < added_turn.size(); i++) {
-			for (int i = 0; i < added_turn.size(); i++) {
 			if (frontOfQueue) {
 				ready_queue.add(0, added_turn.get(order[i]));
-			}
-			else {
+			} else {
 				ready_queue.add(added_turn.get(order[i]));
 			}
 			System.out.print(added_prints.get(order[i]) + queueToString(ready_queue));
@@ -990,17 +987,17 @@ public class Project1 {
 
 	}
 
-	private static String queueToStringSRT(Vector<Process> ready_queue ) {
+	private static String queueToStringSRT(Vector<Process> ready_queue) {
 		String f = "[Q";
-		
+
 		ready_queue.sort(new Comparator<Process>() {
 
 			@Override
 			public int compare(Process o1, Process o2) {
-				return ((Integer)o1.burst_current).compareTo(o2.burst_current);
+				return ((Integer) o1.burst_current).compareTo(o2.burst_current);
 			}
 		});
-		
+
 		if (ready_queue == null || ready_queue.isEmpty())
 			f += " <empty>";
 		else
@@ -1009,7 +1006,7 @@ public class Project1 {
 		f += "]\n";
 		return f;
 	}
-	
+
 	private static String queueToString(Vector<Process> ready_queue) {
 		String f = "[Q";
 		if (ready_queue == null || ready_queue.isEmpty())
