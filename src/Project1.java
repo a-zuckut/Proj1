@@ -275,7 +275,7 @@ public class Project1 {
 
 		System.out.print("time " + (globalTime + 4) + "ms: Simulator ended for RR");
 
-		double wait = tWait / (double) tBursts;
+		double wait = (tWait) / (double) tBursts;
 		double turnaround = tTurnaround / (double) tBursts;
 		double burst = tBurstTime / (double) tBursts;
 
