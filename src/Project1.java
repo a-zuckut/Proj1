@@ -367,20 +367,22 @@ public class Project1 {
 			tTurnaround += p[i].burstsLeft() * simulator.t_cs / 2;
 			p[i].remainingTime = p[i].cpu_burst_time;
 		}
-
+		
 		System.out.print("time 0ms: Simulator started for SRT " + queueToString(queue));
-		Vector<Process> added_turn = new Vector<>();
+		//Setup Vectors to hold all our Processes 
+		Vector<Process> added_turn = new Vector<>();	
 		Vector<String> added_prints = new Vector<>();
 		Vector<Preemptee> preempts = new Vector<>();
-
+		//While we have things to do, and we are not idling
 		while (!queue.isEmpty() || !process_in_io.isEmpty() || !initial_copy.isEmpty() || !simulator.idle()) {
 			added_turn = new Vector<>(); // resetting printing vectors
 			added_prints = new Vector<>();
 			global_counter++; // increase t
 			for (int i = 0; i < queue.size(); i++) {
-				queue.get(i).wait_time++;
+				queue.get(i).wait_time++; // Add wait to all processes that are waiting
 			}
-
+			//For the preempts that are offloading IO
+			//Decrement their IO time remaining
 			for (int i = 0; i < preempts.size(); i++) {
 				preempts.get(i).timeRemaining--;
 				if (preempts.get(i).timeRemaining == 0) {
@@ -389,14 +391,16 @@ public class Project1 {
 				}
 
 			}
-
+			//While we have processes 
 			while (initial_copy.size() != 0) {
+				//If the processses has just arrived
 				if (global_counter == initial_copy.get(0).initial_arrival_time) {
+					//Get the processes from our input 
 					Process ps = initial_copy.get(0);
 					initial_copy.remove(0);
 					ps.ready = global_counter;
 					// If the current running process has more bursts to fin
-					// then the other,
+					// then the other, then we preempt
 					if (simulator.getCurrentProcess() != null
 							&& simulator.getCurrentProcess().burst_current > ps.burst_current
 							&& simulator.getCurrentProcess().state == State.RUNNING) {
@@ -409,7 +413,7 @@ public class Project1 {
 						preempt = true;
 						tCS++;
 						tPreemption++;
-					} else {
+					} else { // There is no premption; processes arrived normally
 						added_turn.add(ps);
 						added_prints.add("time " + global_counter + "ms: Process " + ps.process_id
 								+ " arrived and added to ready queue ");
@@ -417,9 +421,11 @@ public class Project1 {
 				} else
 					break;
 			}
-
+			//Update counter to account for tick
 			simulator.setCounter(global_counter);
+			//If have any processes going into IO
 			if (new_process_into_IO) {
+				//Sort em by shortest IO time remaining
 				process_in_io.sort(new Comparator<Process>() { // Sort ready que
 					@Override
 					public int compare(Process o1, Process o2) {
@@ -427,24 +433,26 @@ public class Project1 {
 					}
 				});
 			}
-
+			//Allow procesess in IO to run
 			for (int i = 0; i < process_in_io.size(); i++) {
 				process_in_io.get(i).io_time_current--;
 			}
-
+			//While we are waiting on some IO
 			while (!process_in_io.isEmpty()) {
+				//If the processes is done with IO and has been offloaded
 				if (process_in_io.get(0).io_time_current == -4) {
 					Process ps = process_in_io.get(0);
+					//If we are idle, add the processes to our queue
 					if (simulator.idle()) {
 						added_turn.add(ps);
 						added_prints.add("time " + global_counter + "ms: Process " + ps.process_id
 								+ " completed I/O; added to ready queue ");
 						ps.ready = global_counter;
 						process_in_io.remove(0);
-					} else {
+					} else {// We are still running;
 						// If the current running process has more bursts to fin
 						// then the other,
-						// Preform a context switch
+						// Preform a preempt. Otherwise, just add it to queue.
 						if (simulator.getCurrentProcess().burst_current > ps.burst_current) {
 							Process old = simulator.getCurrentProcess();
 							ps.ready = global_counter;
@@ -617,202 +625,6 @@ public class Project1 {
 	 * 
 	 * @param processes
 	 */
-	/**
-	 * public static String fcfs_simulation(Process[] processes) {
-	 * 
-	 * int t = 0; Queue<Process> q = new LinkedList<>(); System.out.printf("time
-	 * %dms: Simulator started for FCFS [Q <empty>]\n", t); boolean waiting =
-	 * false, exit = false, waiting_next = false; int waiting_for = 0;
-	 * ArrayList<Process> add = new ArrayList<>(); ArrayList<Process> arrive =
-	 * new ArrayList<>(); int time = -1; boolean hasout = false;
-	 * 
-	 * while (running(processes) && !exit) {
-	 * 
-	 * if (t == 74) System.out.println(waiting_for); add = new ArrayList<>();
-	 * arrive = new ArrayList<>();
-	 * 
-	 * waiting = waiting_next || waiting; boolean arrived = false; // NOTE: once
-	 * processes are finished, burst_amt--, io_time_current // starts to
-	 * decrement
-	 * 
-	 * for (Process p : processes) { if (p.state != State.TERMINATED) { exit =
-	 * false; } if (p.number_bursts > 0) { exit = false; } if (p.burst_current >
-	 * 0 || p.burst_current == p.cpu_burst_time) { exit = false; } }
-	 * 
-	 * if (exit) { t += t_cs / 2; exit = true; break; }
-	 * 
-	 * for (Process p : processes) { if (p.state == State.TERMINATED) {
-	 * q.remove(p); continue; } if (q.contains(p)) { continue; }
-	 * 
-	 * if (p.initial_arrival_time == t) { p.state = State.READY; arrive.add(p);
-	 * // JUST FOR ARRIVAL time = t; hasout = true; arrived = true; } else if (t
-	 * == p.io_time_next) { // FOR IO FINISH p.io_time_current = p.io_time; //
-	 * resetting io_time if (p.number_bursts == 0) { p.state = State.TERMINATED;
-	 * // IF IO was the last thing // to do... terminate } else { add.add(p);
-	 * time = t; hasout = true; p.state = State.READY; if (q.size() == 0 &&
-	 * running_index(processes) == -1) { waiting_next = true; if (waiting_for <
-	 * 4) waiting_for = 4; } } } }
-	 * 
-	 * if (exit) continue;
-	 * 
-	 * for (Process ps : processes) { if (ps.state == State.BLOCKED) { if
-	 * (ps.io_time_current > -1) ps.io_time_current--; } }
-	 * 
-	 * if (arrived == true) { if (running_index(processes) == -1) { waiting_next
-	 * = true; if (waiting_for < 4) waiting_for = 4; }
-	 * 
-	 * for (Process ps : processes) { if (ps.state == State.READY) {
-	 * ps.wait_time++; } } }
-	 * 
-	 * int running_index = running_index(processes);
-	 * 
-	 * if (waiting) { for (Process ps : processes) { if (State.READY ==
-	 * ps.state) { ps.turnaround_time++; } if (State.RUNNING == ps.state) {
-	 * ps.turnaround_time++; } } waiting_next = false; waiting_for--; if
-	 * (waiting_for == 0) waiting = false; if (hasout) { ArrayList<Process>
-	 * total = new ArrayList<>(); total.addAll(add); total.addAll(arrive);
-	 * total.sort(new Comparator<Process>() {
-	 * 
-	 * @Override public int compare(Process o1, Process o2) { return
-	 *           o1.process_id.compareTo(o2.process_id); } }); for (Process p :
-	 *           total) { q.add(p); if (add.contains(p)) {
-	 *           System.out.printf("time %dms: Process %s completed I/O; added
-	 *           to ready queue %s\n", time, p.process_id, queueToString(q)); }
-	 *           else { System.out.printf("time %dms: Process %s arrived and
-	 *           added to ready queue %s\n", t, p.process_id, queueToString(q));
-	 * 
-	 *           } } hasout = false; } t++; } else if (running_index == -1 &&
-	 *           !waiting_next) { // START A NEW // PROCESS for (Process ps :
-	 *           processes) { if (State.READY == ps.state) {
-	 *           ps.turnaround_time++; ps.wait_time++; } } if (q.isEmpty()) {
-	 *           t++; if (hasout) { ArrayList<Process> total = new
-	 *           ArrayList<>(); total.addAll(add); total.addAll(arrive);
-	 *           total.sort(new Comparator<Process>() {
-	 * @Override public int compare(Process o1, Process o2) { return
-	 *           o1.process_id.compareTo(o2.process_id); } }); for (Process p :
-	 *           total) { q.add(p); if (add.contains(p)) {
-	 *           System.out.printf("time %dms: Process %s completed I/O; added
-	 *           to ready queue %s\n", time, p.process_id, queueToString(q)); }
-	 *           else { System.out.printf("time %dms: Process %s arrived and
-	 *           added to ready queue %s\n", t, p.process_id, queueToString(q));
-	 * 
-	 *           } } hasout = false; } continue; } Process run = q.remove(); //
-	 *           Additional wait time because we are just 'starting'
-	 *           run.wait_time++;
-	 * 
-	 *           System.out.printf("time %dms: Process %s started using the CPU
-	 *           %s\n", t, run.process_id, queueToString(q));
-	 * 
-	 *           run.state = State.RUNNING; run.burst_current--;
-	 *           run.turnaround_time++;
-	 * 
-	 *           if (run.burst_current == 0) { run.state = State.BLOCKED;
-	 *           run.io_time_current = run.io_time; } t++; for (Process ps :
-	 *           processes) { if (State.READY == ps.state) {
-	 *           ps.turnaround_time++; ps.wait_time++; } if (State.RUNNING ==
-	 *           ps.state) { ps.turnaround_time++; } }
-	 * 
-	 *           } else { // CHECK IF PROCESS IS NOW OVER - IF SO - START IO,
-	 *           burst-- for (Process ps : processes) { if (State.READY ==
-	 *           ps.state) { ps.turnaround_time++; ps.wait_time++; } } if
-	 *           (waiting_next && running_index == -1) { if (hasout) {
-	 *           ArrayList<Process> total = new ArrayList<>();
-	 *           total.addAll(add); total.addAll(arrive); total.sort(new
-	 *           Comparator<Process>() {
-	 * @Override public int compare(Process o1, Process o2) { return
-	 *           o1.process_id.compareTo(o2.process_id); } }); for (Process p :
-	 *           total) { q.add(p); if (add.contains(p)) {
-	 *           System.out.printf("time %dms: Process %s completed I/O; added
-	 *           to ready queue %s\n", time, p.process_id, queueToString(q)); }
-	 *           else { System.out.printf("time %dms: Process %s arrived and
-	 *           added to ready queue %s\n", t, p.process_id, queueToString(q));
-	 * 
-	 *           } } hasout = false; } continue; } Process run =
-	 *           processes[running_index];
-	 * 
-	 *           run.turnaround_time++; run.burst_current--;
-	 *           run.cpu_burst_time_actual++;
-	 * 
-	 *           if (run.burst_current == -1) {
-	 * 
-	 *           run.number_bursts--; if (run.number_bursts != 0) {
-	 * 
-	 *           if (q.containsAll(add) && !add.isEmpty() && time == t) {
-	 *           Queue<Process> copy = new LinkedList<>(); copy.addAll(q);
-	 *           copy.removeAll(add); run.io_time_next = t + run.io_time + t_cs
-	 *           / 2; System.out.printf("time %dms: Process %s completed a CPU
-	 *           burst; %d burst%s to go %s\n", t, run.process_id,
-	 *           run.number_bursts, run.number_bursts > 1 ? "s" : "",
-	 *           queueToString(copy)); System.out.printf( "time %dms: Process %s
-	 *           switching out of CPU; will block on I/O until time %dms %s\n",
-	 *           t, run.process_id, run.io_time_next, queueToString(copy)); for
-	 *           (Process p : add) { q.add(p); System.out.printf("time %dms:
-	 *           Process %s completed I/O; added to ready queue %s\n", t,
-	 *           p.process_id, queueToString(q)); } hasout = false; } else {
-	 * 
-	 *           run.io_time_next = t + run.io_time + t_cs / 2;
-	 *           System.out.printf("time %dms: Process %s completed a CPU burst;
-	 *           %d burst%s to go %s\n", t, run.process_id, run.number_bursts,
-	 *           run.number_bursts > 1 ? "s" : "", queueToString(q));
-	 *           System.out.printf( "time %dms: Process %s switching out of CPU;
-	 *           will block on I/O until time %dms %s\n", t, run.process_id,
-	 *           run.io_time_next, queueToString(q)); } } else {
-	 *           System.out.printf("time %dms: Process %s terminated %s\n", t,
-	 *           run.process_id, queueToString(q)); run.state =
-	 *           State.TERMINATED; run.io_time_current = 0; } run.burst_current
-	 *           = run.cpu_burst_time; if (run.state != State.TERMINATED)
-	 *           run.state = State.BLOCKED;
-	 * 
-	 *           // NOTE: THIS ONLY WOULD APPLY IF EVERY TIME A PROCESS //
-	 *           ***ENDS*** THERE IS A CONTEXT SWITCH run.context_switches++;
-	 * 
-	 *           waiting = true; waiting_for = t_cs - 1;
-	 * 
-	 *           // ADD CONTEXT SWITCH TIME
-	 * 
-	 *           q.remove(run); }
-	 * 
-	 *           if (hasout) { ArrayList<Process> total = new ArrayList<>();
-	 *           total.addAll(add); total.addAll(arrive); total.sort(new
-	 *           Comparator<Process>() {
-	 * @Override public int compare(Process o1, Process o2) { return
-	 *           o1.process_id.compareTo(o2.process_id); } }); for (Process p :
-	 *           total) { q.add(p); if (add.contains(p)) {
-	 *           System.out.printf("time %dms: Process %s completed I/O; added
-	 *           to ready queue %s\n", time, p.process_id, queueToString(q)); }
-	 *           else { System.out.printf("time %dms: Process %s arrived and
-	 *           added to ready queue %s\n", t, p.process_id, queueToString(q));
-	 * 
-	 *           } } hasout = false; }
-	 * 
-	 *           t++; if (!running(processes)) t += t_cs / 2 - 1; } }
-	 * 
-	 *           System.out.printf("time %dms: Simulator ended for FCFS\n\n",
-	 *           t);
-	 * 
-	 *           int cpubursttime = 0; int total_cpu_bursts = 0; int waittime =
-	 *           0; int turnaroundtime = 0; int contextswitches = 0; int
-	 *           preemptions = 0;
-	 * 
-	 *           for (Process p : processes) { total_cpu_bursts +=
-	 *           p.number_bursts_CONSTANT; cpubursttime +=
-	 *           p.cpu_burst_time_actual; waittime += p.wait_time;
-	 *           turnaroundtime += p.turnaround_time; contextswitches +=
-	 *           p.context_switches; preemptions += p.preemptions;
-	 * 
-	 *           } String ret = "Algorithm FCFS\n"; ret += String.format("--
-	 *           average CPU burst time: %.2f ms\n", (double) cpubursttime /
-	 *           (double) total_cpu_bursts); ret += String.format("-- average
-	 *           wait time: %.2f ms(%d/%d)\n", (double) waittime / (double)
-	 *           total_cpu_bursts, waittime, total_cpu_bursts); ret +=
-	 *           String.format("-- average turnaround time: %.2f ms(%d/%d)\n",
-	 *           (double) turnaroundtime / (double) total_cpu_bursts,
-	 *           turnaroundtime, total_cpu_bursts); ret += String.format("--
-	 *           total number of context switches: %d\n", contextswitches); ret
-	 *           += String.format("-- total number of preemptions: %d\n",
-	 *           preemptions); return ret; }
-	 */
-
 	public static String fcfs(Process[] p) {
 		int tBurstTime = 0;
 		int tCS = 0;
